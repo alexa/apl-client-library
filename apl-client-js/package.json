@@ -1,0 +1,8 @@
+{
+  "name": "apl-client",
+  "version": "1.6.0",
+  "description": "this version supports APL 1.6",
+  "repository": "hash:83430b18",
+  "main": "index.js",
+  "types": "./index.d.ts"
+}
