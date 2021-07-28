@@ -21,7 +21,7 @@
 /**
  * WebSocket interface to listen on.
  */
-static const std::string DEFAULT_WEBSOCKET_INTERFACE = "127.0.0.1";
+static const std::string DEFAULT_WEBSOCKET_INTERFACE = "0.0.0.0";
 
 /// WebSocket port to listen on.
 static const int DEFAULT_WEBSOCKET_PORT = 8080;

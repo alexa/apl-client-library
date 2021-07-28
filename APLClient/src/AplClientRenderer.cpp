@@ -84,7 +84,7 @@ AplClientRenderer::AplClientRenderer(AplConfigurationPtr config, std::string win
           m_aplConnectionManager{std::make_shared<AplCoreConnectionManager>(config)},
           m_aplGuiRenderer{new AplCoreGuiRenderer(config, m_aplConnectionManager)},
           m_lastReportedComplexity{0} {
-
+    m_messageHandlers.emplace("displayMetrics", [this](const std::string& message) { handleDisplayMetrics(message); });
 }
 
 bool AplClientRenderer::shouldHandleMessage(const std::string& message) {
@@ -92,6 +92,16 @@ bool AplClientRenderer::shouldHandleMessage(const std::string& message) {
 }
 
 void AplClientRenderer::handleMessage(const std::string& message) {
+    rapidjson::Document doc;
+    if (!doc.Parse(message.c_str()).HasParseError()) {
+        if (doc.HasMember("type")) {
+            std::string type = doc["type"].GetString();
+            auto fit = m_messageHandlers.find(type);
+            if (fit != m_messageHandlers.end()) {
+                fit->second(message);
+            }
+        }
+    }
     m_aplConnectionManager->handleMessage(message);
 }
 
@@ -174,13 +184,18 @@ void AplClientRenderer::restoreDocumentState(AplDocumentStatePtr documentState) 
     m_aplConnectionManager->restoreDocumentState(std::move(documentState));
 }
 
+void AplClientRenderer::handleDisplayMetrics(const std::string& message) {
+    onMetricsReported(message);
+    m_aplConfiguration->getAplOptions()->onRenderingEvent("", AplRenderingEvent::DOCUMENT_RENDERED);
+}
+
 void AplClientRenderer::onRenderDirectiveReceived(const std::chrono::steady_clock::time_point& receiveTime) {
     auto metricsRecorder = m_aplConfiguration->getMetricsRecorder();
     AplMetricsRecorderInterface::DocumentId document = metricsRecorder->registerDocument();
     m_renderTimer = metricsRecorder->createTimer(document, AplRenderingSegment::kRenderDocument);
     m_renderTimer->startedAt(receiveTime);
 
-    auto counter = metricsRecorder->createCounter(document, "SmartScreenSDK.RenderDocumentReceived");
+    auto counter = metricsRecorder->createCounter(document, "APLClient.RenderDocumentReceived");
     counter->increment();
 }
 
@@ -316,6 +331,4 @@ void AplClientRenderer::onTelemetrySinkUpdated(APLClient::Telemetry::AplMetricsS
 std::shared_ptr<APLClient::Extensions::AplCoreExtensionInterface> AplClientRenderer::getExtension(const std::string& uri) {
     return m_aplConnectionManager->getExtension(uri);
 }
-
-
 }  // namespace APLClient

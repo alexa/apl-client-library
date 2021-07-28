@@ -13,8 +13,8 @@
  * permissions and limitations under the License.
  */
 
-#ifndef ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLOPTIONSINTERFACE_H_
-#define ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLOPTIONSINTERFACE_H_
+#ifndef APLCLIENT_APL_APLOPTIONSINTERFACE_H_
+#define APLCLIENT_APL_APLOPTIONSINTERFACE_H_
 
 #include <memory>
 #include <chrono>
@@ -106,9 +106,10 @@ public:
 
     /**
      * Called as a response to a @c requestVisualContext request
+     * The device should always report dynamic data sources context at the same time that it reports visual context.
      * @param token The APL token
      * @param stateRequestToken The token which was passed during the call to @c requestVisualContext
-     * @param context The visual context
+     * @param context The visual context + datasource context
      */
     virtual void onVisualContextAvailable(
         const std::string& token,
@@ -188,4 +189,4 @@ public:
 using AplOptionsInterfacePtr = std::shared_ptr<AplOptionsInterface>;
 
 }  // namespace APLClient
-#endif  // ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLOPTIONSINTERFACE_H_
+#endif  // APLCLIENT_APL_APLOPTIONSINTERFACE_H_

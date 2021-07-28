@@ -19,7 +19,7 @@ const express = require('express');
 const fs = require('fs')
 const app = express();
 
-const INTERFACE = '127.0.0.1';
+const INTERFACE = '0.0.0.0';
 const PORT = 8000;
 
 const LIB_PATH = path.join(__dirname, 'node_modules', 'apl-client');
@@ -90,5 +90,5 @@ app.get("/svg/*.svg", async (req, res) => {
 });
 
 console.log('Listening on ' + INTERFACE  + ':' + PORT);
-app.listen(PORT, INTERFACE);
+app.listen(PORT);
 

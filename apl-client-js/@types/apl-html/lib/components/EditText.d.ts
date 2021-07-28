@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,10 +48,11 @@ export declare class EditText extends ActionableComponent<IEditTextProperties> {
     private setBorderWidth;
     private setColor;
     private setDisabled;
-    private setFontFamily;
-    private setFontSize;
+    private setLang;
     private setFontStyle;
     private setFontWeight;
+    private setFontFamily;
+    private setFontSize;
     private setHighlightColor;
     private setHint;
     private setHintColor;

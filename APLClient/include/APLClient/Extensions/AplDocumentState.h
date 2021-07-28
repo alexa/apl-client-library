@@ -13,8 +13,8 @@
  * permissions and limitations under the License.
  */
 
-#ifndef ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLDOCUMENTSTATE_H_
-#define ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLDOCUMENTSTATE_H_
+#ifndef APLCLIENT_APL_APLDOCUMENTSTATE_H_
+#define APLCLIENT_APL_APLDOCUMENTSTATE_H_
 
 #include <memory>
 #include <chrono>
@@ -76,4 +76,4 @@ using AplDocumentStatePtr = std::shared_ptr<AplDocumentState>;
 
 }  // namespace Extensions
 }  // namespace APLClient
-#endif  // ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLDOCUMENTSTATE_H_
+#endif  // APLCLIENT_APL_APLDOCUMENTSTATE_H_

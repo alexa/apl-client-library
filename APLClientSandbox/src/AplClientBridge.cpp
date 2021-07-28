@@ -13,22 +13,28 @@
  * permissions and limitations under the License.
  */
 
+#include "APLClient/Telemetry/AplMetricsSinkInterface.h"
 #include "APLClient/Telemetry/NullAplMetricsRecorder.h"
 
 #include "APLClientSandbox/Logger.h"
 #include "APLClientSandbox/Message.h"
 
 #include "APLClientSandbox/AplClientBridge.h"
+#include <APLClientSandbox/AplMetricsStreamSink.h>
+#include "APLClient/Extensions/E2EEncryption/AplE2EEncryptionExtension.h"
 
 #include <chrono>
 
 using namespace APLClient::Extensions;
+using namespace APLClient::Telemetry;
 
 static const std::chrono::milliseconds RESOURCE_DOWNLOAD_TIMEOUT{3000};
 
 std::shared_ptr<AplClientBridge> AplClientBridge::create() {
     std::shared_ptr<AplClientBridge> client(new AplClientBridge());
     client->m_client = std::make_shared<APLClient::AplClientBinding>(client);
+    std::shared_ptr<AplMetricsStreamSink> sink(new AplMetricsStreamSink(client));
+    client->m_client->onTelemetrySinkUpdated(sink);
     client->m_aplClientRenderer = client->m_client->createRenderer("");
     client->loadExtensions();
     return client;
@@ -38,17 +44,12 @@ AplClientBridge::AplClientBridge() {
 }
 
 void AplClientBridge::loadExtensions() {
-
-    // Backstack Extension
     m_backstackExtension = std::make_shared<Backstack::AplBackstackExtension>(shared_from_this());
-
-    // AudioPlayer Extension
     m_audioPlayerExtension = std::make_shared<AudioPlayer::AplAudioPlayerExtension>(shared_from_this());
-
-    // AudioPlayerAlarms Extension
     m_audioPlayerAlarmsExtension = std::make_shared<AudioPlayer::AplAudioPlayerAlarmsExtension>(shared_from_this());
+    m_encryptionExtension = std::make_shared<E2EEncryption::AplE2EEncryptionExtension>();
 
-    addExtensions({m_backstackExtension, m_audioPlayerExtension, m_audioPlayerAlarmsExtension});
+    addExtensions({m_backstackExtension, m_audioPlayerExtension, m_audioPlayerAlarmsExtension, m_encryptionExtension});
 }
 
 void AplClientBridge::addExtensions(std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions) {
@@ -91,6 +92,7 @@ void AplClientBridge::renderDocument(
             audioPlayerPlaying = false;
         }
 
+        m_aplClientRenderer->onRenderDirectiveReceived(std::chrono::steady_clock::now());
         m_aplClientRenderer->renderDocument(document, data, supportedViewports, "");
     });
 }
@@ -205,6 +207,7 @@ void AplClientBridge::onSetDocumentIdleTimeout(
 
 void AplClientBridge::onRenderingEvent(const std::string& token, APLClient::AplRenderingEvent event) {
     Logger::debug("AplClientBridge::onRenderingEvent");
+    m_aplClientRenderer->onRenderingEvent(event);
 }
 
 void AplClientBridge::onFinish(const std::string& token) {
@@ -230,6 +233,8 @@ void AplClientBridge::onExtensionEvent(
     const std::string& params,
     unsigned int event,
     std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback) {
+    Logger::info("AplClientBridge::onExtensionEvent");
+
     m_executor.submit([this, uri, name, source, params, event, resultCallback] {
         m_aplClientRenderer->onExtensionEvent(uri, name, source, params, event, resultCallback);
     });

@@ -162,12 +162,80 @@ static const std::string DOCUMENT =
     "   ]"
     "}";
 
+static const std::string DOCUMENT_WITH_IDLETIMEOUT =
+    "{"
+    "  \"type\": \"APL\","
+    "  \"version\": \"1.5\","
+    "  \"theme\": \"light\","
+    "  \"description\": \"This is a sample APL document\","
+    "  \"import\": [],"
+    "  \"settings\": {"
+    "      \"idleTimeout\": 123"
+    "  },"
+    "  \"layouts\": {"
+    "    \"Box\": {"
+    "      \"item\": {"
+    "        \"type\": \"VectorGraphic\","
+    "        \"width\": \"50dp\","
+    "        \"height\": \"50dp\","
+    "        \"style\": \"focusStyle\","
+    "        \"source\": \"box\""
+    "      }"
+    "    }"
+    "  },"
+    "  \"mainTemplate\": {"
+    "    \"parameters\": ["
+    "      \"payload\""
+    "    ],"
+    "    \"item\": {"
+    "          \"type\": \"Container\","
+    "          \"items\": ["
+    "            {"
+    "              \"type\": \"Text\","
+    "              \"id\": \"COMP1\","
+    "              \"width\": \"100%\","
+    "              \"text\": \"Hello World\","
+    "              \"fontSize\": 50"
+    "            },"
+    "            {"
+    "              \"type\": \"Video\","
+    "              \"id\": \"video\","
+    "              \"height\": 300,"
+    "              \"width\": 716.8,"
+    "              \"top\": 10,"
+    "              \"left\": 100,"
+    "              \"autoplay\": true,"
+    "              \"audioTrack\": \"background\","
+    "              \"source\": ["
+    "                {"
+    "                  \"url\": \"URL\""
+    "                }"
+    "              ]"
+    "            },"
+    "            {"
+    "              \"id\": \"textBox\","
+    "              \"type\": \"Text\","
+    "              \"text\": \"Hello\","
+    "              \"fontSize\": 50"
+    "            },"
+    "            {"
+    "              \"id\" : \"GRAPHIC\","
+    "              \"type\": \"Box\","
+    "              \"position\": \"absolute\","
+    "              \"top\": 0,"
+    "              \"left\": 225"
+    "            }"
+    "            ]"
+    "      }"
+    "   }"
+    "}";
+
 static const std::string BUILD_PAYLOAD =
     "{"
     "  \"type\":\"build\","
     "  \"payload\":"
     "  {"
-    "    \"agentName\":\"SmartScreenSDK\","
+    "    \"agentName\":\"APLClient\","
     "    \"agentVersion\":\"1.0\","
     "    \"allowOpenUrl\":false,"
     "    \"disallowVideo\":false,"
@@ -387,7 +455,7 @@ TEST_F(AplCoreConnectionManagerTest, BlockingSendSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleBuildSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -399,10 +467,10 @@ TEST_F(AplCoreConnectionManagerTest, HandleBuildSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleDynamicDataSource) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(2);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(6);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(6));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
+    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, std::chrono::milliseconds(-1))).Times((1));
     EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
 
     auto content = apl::Content::create(DOCUMENT_DYNAMIC);
@@ -440,7 +508,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleDynamicDataSource) {
 TEST_F(AplCoreConnectionManagerTest, HandleConfigurationChangeSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -469,24 +537,35 @@ TEST_F(AplCoreConnectionManagerTest, HandleConfigurationChangeSuccess) {
     m_aplCoreConnectionManager->handleMessage(configChange);
     int reInflateEvent = apl::EventType::kEventTypeReinflate;
     const std::string messageType = "\"type\":\"event\"";
-    const std::string expectedPayload = "\"payload\":{\"type\":" + std::to_string(reInflateEvent) + "},\"seqno\":12}";
+    const std::string expectedPayload = "\"payload\":{\"type\":" + std::to_string(reInflateEvent) + "},\"seqno\":13}";
     EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(messageType, expectedPayload))).Times(1);
     m_aplCoreConnectionManager->onUpdateTick();
-    // The event needs to be resolved.
     const std::string payload=
             "  {"
             "    \"type\":\"response\","
             "    \"payload\":{"
-            "      \"event\":12"
+            "      \"event\":13"
             "    }"
             "  }";
     m_aplCoreConnectionManager->handleMessage(payload);
 }
 
+TEST_F(AplCoreConnectionManagerTest, CheckDocumentTimeoutInSettings) {
+    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(10);
+    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
+    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, std::chrono::milliseconds(123))).Times((1));
+    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
+
+    BuildDocument(DOCUMENT_WITH_IDLETIMEOUT, DATA, VIEWPORT);
+}
+
 TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(6);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(10);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(10));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
     EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
@@ -519,7 +598,7 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
 TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsInterrupt) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
     EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
@@ -550,7 +629,7 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsInterrupt) {
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -577,7 +656,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateMediaSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -612,7 +691,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateMediaSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleGraphicUpdateSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -639,10 +718,18 @@ TEST_F(AplCoreConnectionManagerTest, HandleGraphicUpdateSuccess) {
         "\"intrinsicHeight\":100.0,"
         "\"viewportWidth\":100.0,"
         "\"viewportHeight\":100.0,"
-        "\"root\":{\"id\":1000,\"type\":0,\"props\":{\"height_actual\":100.0,\"viewportHeight_actual\":100.0,\"viewportWidth_actual\":100.0,\"width_actual\":100.0},\"children\":[]},"
+        "\"root\":{\"id\":1000,\"type\":0,"
+        "\"props\":{"
+        "\"height_actual\":100.0,"
+        "\"lang\":\"\","
+        "\"layoutDirection\":0.0,"
+        "\"viewportHeight_actual\":100.0,"
+        "\"viewportWidth_actual\":100.0,"
+        "\"width_actual\":100.0},"
+        "\"children\":[]},"
         "\"dirty\":[]},"
         "\"mediaBounds\":[-25.0,-25.0,100.0,100.0]"
-        "}],";
+        "}";
     EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(messageType, dirtyPayload))).Times(1);
     m_aplCoreConnectionManager->onUpdateTick();
 }
@@ -693,7 +780,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleEventResponseSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleEnsureLayoutSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(10);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(10));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -718,7 +805,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleEnsureLayoutSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleScrollToRectInComponentSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -748,7 +835,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleScrollToRectInComponentSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleKeyboardSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(10);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(10));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -781,7 +868,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleKeyboardSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateCursorPositionSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -806,7 +893,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateCursorPositionSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandlePointerEventSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -835,7 +922,7 @@ TEST_F(AplCoreConnectionManagerTest, HandlePointerEventSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleReInflateSuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -861,7 +948,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleReInflateSuccess) {
 TEST_F(AplCoreConnectionManagerTest, HandleReHierarchySuccess) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(9);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
@@ -879,6 +966,19 @@ TEST_F(AplCoreConnectionManagerTest, HandleReHierarchySuccess) {
             "  \"payload\": {}"
             "}";
     m_aplCoreConnectionManager->handleMessage(payload);
+}
+
+TEST_F(AplCoreConnectionManagerTest, ProvideStateSuccess) {
+    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
+    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
+    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
+    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
+    BuildDocument(DOCUMENT, DATA, VIEWPORT);
+    EXPECT_CALL(*m_mockAplOptions, onVisualContextAvailable(_, _, _)).Times(1);
+    m_aplCoreConnectionManager->provideState(1);
 }
 
 }  // namespace test

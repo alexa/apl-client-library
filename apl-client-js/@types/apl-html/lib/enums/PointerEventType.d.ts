@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 export declare enum PointerEventType {
     /**     * This indicates that a pointer has ended its interaction with the component due to some system level cancellation.     * This is analagous to Android's ACTION_CANCEL, but should *not* be confused with the onCancel APL Touchable     * component event which can occur for other reasons than viewhosts passing along a cancel event     */
     kPointerCancel = 0,

@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 export declare enum EventProperty {
     kEventPropertyAlign = 0,
     kEventPropertyArguments = 1,
@@ -13,9 +14,10 @@ export declare enum EventProperty {
     kEventPropertyExtension = 7,
     kEventPropertyExtensionURI = 8,
     kEventPropertyHighlightMode = 9,
-    kEventPropertyName = 10,
-    kEventPropertyPosition = 11,
-    kEventPropertyReason = 12,
-    kEventPropertySource = 13,
-    kEventPropertyValue = 14
+    kEventPropertyMediaType = 10,
+    kEventPropertyName = 11,
+    kEventPropertyPosition = 12,
+    kEventPropertyReason = 13,
+    kEventPropertySource = 14,
+    kEventPropertyValue = 15
 }

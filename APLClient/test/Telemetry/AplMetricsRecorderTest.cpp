@@ -110,7 +110,7 @@ TEST_F(AplMetricsRecorderTest, InfersRenderingProgressFromSegments) {
     EXPECT_EQ(m_document, m_metricsRecorder->latestDocument());
     EXPECT_EQ(AplMetricsRecorderInterface::UNKNOWN_DOCUMENT, m_metricsRecorder->currentDisplayedDocument());
 
-    EXPECT_CALL(*m_mockSink, reportTimer(IsEmpty(), Eq("SmartScreenSDK.renderDocument"), _))
+    EXPECT_CALL(*m_mockSink, reportTimer(IsEmpty(), Eq("APLClient.renderDocument"), _))
         .Times(1);
 
     timer->stop();

@@ -24,7 +24,7 @@ namespace APLClient {
 namespace Telemetry {
 
 static const std::map<AplRenderingSegment, std::string> sSegmentNames = {
-    {AplRenderingSegment::kRenderDocument, "SmartScreenSDK.renderDocument"},
+    {AplRenderingSegment::kRenderDocument, "APLClient.renderDocument"},
     {AplRenderingSegment::kContentCreation, "APL-Web.Content.create"},
     {AplRenderingSegment::kRootContextInflation, "APL.rootContext.inflate"},
     {AplRenderingSegment::kTextMeasure, "APL-Web.RootContext.measureCount"}

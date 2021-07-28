@@ -1,6 +1,8 @@
 set(APLClientSandbox_SOURCES)
+
 list(APPEND APLClientSandbox_SOURCES
     AplClientBridge.cpp
+    AplMetricsStreamSink.cpp
     Executor.cpp
     GUIManager.cpp
     Logger.cpp
@@ -27,6 +29,16 @@ if(NOT ASIO_INCLUDE_DIR)
     if(ASIO_INCLUDE_DIR STREQUAL "ASIO_INCLUDE_DIR-NOTFOUND")
         message(FATAL_ERROR "WebSocket support requires asio.")
     endif()
+endif()
+
+if(FETCH_CONTENT)
+    # Pull Dependencies
+    include(FetchContent)
+    FetchContent_Declare(
+            webstocketpp
+            URL https://github.com/zaphoyd/websocketpp/archive/refs/tags/0.8.2.zip
+    )
+    FetchContent_MakeAvailable(webstocketpp)
 endif()
 
 target_compile_definitions(APLClientSandbox PUBLIC ASIO_STANDALONE)

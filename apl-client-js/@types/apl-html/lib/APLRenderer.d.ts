@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 import { Component } from './components/Component';
 import { MeasureMode } from './components/text/MeasureMode';
 import { AnimationQuality } from './enums/AnimationQuality';
@@ -87,7 +88,8 @@ export interface IDeveloperToolOptions {
 }
 /**
  * Event coming from APL.
- * See https://aplspec.aka.corp.amazon.com/release-1.1/html/standard_commands.html#user-event for more information.
+ * See https://developer.amazon.com/en-US/docs/alexa/alexa-presentation-language/apl-interface.html#userevent-request \
+ * for more information.
  */
 export interface ISendEvent {
     source: any;
@@ -187,6 +189,7 @@ export default abstract class APLRenderer<Options = {
     private lastPointerEventTimestamp;
     protected logger: ILogger;
     componentByMappingKey: Map<string, Component>;
+    private viewEventListeners;
     /** A reference to the APL root context */
     context: APL.Context;
     /** Root renderer component */
@@ -337,5 +340,6 @@ export default abstract class APLRenderer<Options = {
     private renderComponents();
     private removeRenderingComponents();
     private focusTopLeft();
+    private recoverFocusOnEnter(id, code);
     private passWindowEventsToCore;
 }

@@ -20,24 +20,25 @@
 namespace APLClient {
 namespace Telemetry {
 
-DownloadMetricsEmitter::DownloadMetricsEmitter(AplMetricsRecorderInterfacePtr metricsRecorder)
-       : m_metricsRecorder{metricsRecorder} {
+DownloadMetricsEmitter::DownloadMetricsEmitter(AplMetricsRecorderInterfacePtr metricsRecorder,
+                                               const std::string& metricsPrefix)
+       : m_metricsRecorder{metricsRecorder}, m_metricsPrefix{metricsPrefix}{
     m_cacheCounter = m_metricsRecorder->createCounter(
             AplMetricsRecorderInterface::LATEST_DOCUMENT,
-            "SmartScreenSDK.ImportDocumentCacheHit");
+            m_metricsPrefix+".ImportDocumentCacheHit");
     m_sizeCounter = m_metricsRecorder->createCounter(
             AplMetricsRecorderInterface::LATEST_DOCUMENT,
-            "SmartScreenSDK.ImportDocumentSize", false);
+            m_metricsPrefix+".ImportDocumentSize", false);
     auto importCounter = m_metricsRecorder->createCounter(
             AplMetricsRecorderInterface::LATEST_DOCUMENT,
-            "SmartScreenSDK.ImportDocument");
+            m_metricsPrefix+".ImportDocument");
     importCounter->increment();
 }
 
 void DownloadMetricsEmitter::onDownloadStarted() {
     m_downloadTimer = m_metricsRecorder->createTimer(
             APLClient::Telemetry::AplMetricsRecorderInterface::LATEST_DOCUMENT,
-            "SmartScreenSDK.ImportDocumentTime");
+            m_metricsPrefix+".ImportDocumentTime");
     m_downloadTimer->start();
 }
 

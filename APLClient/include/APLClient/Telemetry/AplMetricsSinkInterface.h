@@ -31,10 +31,11 @@ public:
     AplMetricsSinkInterface() = default;
     virtual ~AplMetricsSinkInterface() = default;
 
-    virtual void reportTimer(const std::map<std::string, std::string> &metadata,
+    virtual void reportTimer(const std::map <std::string, std::string>& metadata,
                              const std::string& name,
                              const std::chrono::nanoseconds& value) = 0;
-    virtual void reportCounter(const std::map<std::string, std::string> &metadata,
+
+    virtual void reportCounter(const std::map <std::string, std::string>& metadata,
                                const std::string& name,
                                uint64_t value) = 0;
 };

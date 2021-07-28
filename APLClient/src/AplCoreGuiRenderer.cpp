@@ -22,7 +22,7 @@ namespace APLClient {
 
 /// CDN for alexa import packages (styles/resources/etc)
 /// (https://developer.amazon.com/en-US/docs/alexa/alexa-presentation-language/apl-document.html#import)
-static const char* ALEXA_IMPORT_PATH = "https://d2na8397m465mh.cloudfront.net/packages/%s/%s/document.json";
+static const char* ALEXA_IMPORT_PATH = "https://arl.assets.apl-alexa.com/packages/%s/%s/document.json";
 /// The number of bytes read from the attachment with each read in the read loop.
 static const size_t CHUNK_SIZE(1024);
 /// Name of the mainTemplate parameter to which avs datasources binds to.

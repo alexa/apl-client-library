@@ -1,3 +1,7 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
@@ -24,8 +28,9 @@ declare namespace APL {
         public updateGraphic(json: string);
         public getChildCount(): number;
         public getChildAt(index: number): Component;
-        public getDisplayedChildCount(): Promise<number>;
-        public getDisplayedChildId(displayIndex: number): Promise<string>;
+        public getDisplayedChildCount(): number;
+        public getDisplayedChildAt(index: number): Component;
+        public getDisplayedChildId(displayIndex: number): string;
         public appendChild(child: Component): boolean;
         public insertChild(child: Component, index: number): boolean;
         public remove(): boolean;

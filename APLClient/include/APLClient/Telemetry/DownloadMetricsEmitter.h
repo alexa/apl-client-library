@@ -29,7 +29,7 @@ namespace Telemetry {
  */
 class DownloadMetricsEmitter final {
 public:
-    explicit DownloadMetricsEmitter(AplMetricsRecorderInterfacePtr metricsRecorder);
+    explicit DownloadMetricsEmitter(AplMetricsRecorderInterfacePtr metricsRecorder, const std::string& metricsPrefix);
 
     ~DownloadMetricsEmitter() = default;
 
@@ -63,6 +63,7 @@ public:
 
 private:
     AplMetricsRecorderInterfacePtr m_metricsRecorder;
+    const std::string& m_metricsPrefix;
     std::unique_ptr<AplTimerHandle> m_downloadTimer;
     std::unique_ptr<AplCounterHandle> m_cacheCounter;
     std::unique_ptr<AplCounterHandle> m_sizeCounter;

@@ -28,9 +28,10 @@ namespace APLClient {
 /// The keys used in ProvideState.
 static const char TOKEN_KEY[] = "token";
 static const char VERSION_KEY[] = "version";
-static const char CONTEXT_KEY[] = "componentsVisibleOnScreen";
+static const char VISUAL_CONTEXT_KEY[] = "componentsVisibleOnScreen";
+static const char DATASOURCE_CONTEXT_KEY[] = "dataSources";
 /// The value used in ProvideState.
-static const char VERSION_VALUE[] = "AplRenderer-1.4";
+static const char VERSION_VALUE[] = "AplRenderer-1.7";
 
 // Key used in messaging
 static const char SEQNO_KEY[] = "seqno";
@@ -66,6 +67,7 @@ static const char ALLOWOPENURL_KEY[] = "allowOpenUrl";
 static const char DISALLOWVIDEO_KEY[] = "disallowVideo";
 static const char ANIMATIONQUALITY_KEY[] = "animationQuality";
 static const char SUPPORTED_EXTENSIONS[] = "supportedExtensions";
+static const char EXTENSION_MESSAGE_KEY[] = "extension";
 
 /// The keys used in OS accessibility settings.
 static const char FONTSCALE_KEY[] = "fontScale";
@@ -115,25 +117,25 @@ static const char POINTERID_KEY[] = "pointerId";
 
 /// Data sources
 static const std::vector<std::string> KNOWN_DATA_SOURCES = {
-    apl::DynamicIndexListConstants::DEFAULT_TYPE_NAME,
-    apl::DynamicTokenListConstants::DEFAULT_TYPE_NAME,
+        apl::DynamicIndexListConstants::DEFAULT_TYPE_NAME,
+        apl::DynamicTokenListConstants::DEFAULT_TYPE_NAME,
 };
 
 static apl::Bimap<std::string, apl::ViewportMode> AVS_VIEWPORT_MODE_MAP = {
-    {"HUB", apl::ViewportMode::kViewportModeHub},
-    {"TV", apl::ViewportMode::kViewportModeTV},
-    {"MOBILE", apl::ViewportMode::kViewportModeMobile},
-    {"AUTO", apl::ViewportMode::kViewportModeAuto},
-    {"PC", apl::ViewportMode::kViewportModePC},
+        {"HUB",    apl::ViewportMode::kViewportModeHub},
+        {"TV",     apl::ViewportMode::kViewportModeTV},
+        {"MOBILE", apl::ViewportMode::kViewportModeMobile},
+        {"AUTO",   apl::ViewportMode::kViewportModeAuto},
+        {"PC",     apl::ViewportMode::kViewportModePC},
 };
 
 static apl::Bimap<std::string, apl::ScreenShape> AVS_VIEWPORT_SHAPE_MAP = {
-    {"ROUND", apl::ScreenShape::ROUND},
-    {"RECTANGLE", apl::ScreenShape::RECTANGLE},
+        {"ROUND",     apl::ScreenShape::ROUND},
+        {"RECTANGLE", apl::ScreenShape::RECTANGLE},
 };
 
 static apl::Bimap<std::string, apl::RootConfig::ScreenMode> AVS_SCREEN_MODE_MAP = {
-        {"normal", apl::RootConfig::kScreenModeNormal},
+        {"normal",        apl::RootConfig::kScreenModeNormal},
         {"high-contrast", apl::RootConfig::kScreenModeHighContrast},
 };
 
@@ -144,37 +146,26 @@ AplCoreConnectionManager::AplCoreConnectionManager(AplConfigurationPtr config) :
         m_replyExpectedSequenceNumber{0},
         m_blockingSendReplyExpected{false} {
     m_StartTime = getCurrentTime();
-    m_renderingStart = std::chrono::steady_clock::time_point(std::chrono::milliseconds(0));
 
     m_extensionManager = std::make_shared<AplCoreExtensionManager>();
     m_messageHandlers.emplace("build", [this](const rapidjson::Value& payload) { handleBuild(payload); });
-    m_messageHandlers.emplace("configurationChange", [this](const rapidjson::Value& payload) { handleConfigurationChange(payload); });
+    m_messageHandlers.emplace("configurationChange",[this](const rapidjson::Value& payload) { handleConfigurationChange(payload); });
     m_messageHandlers.emplace("update", [this](const rapidjson::Value& payload) { handleUpdate(payload); });
     m_messageHandlers.emplace("updateMedia", [this](const rapidjson::Value& payload) { handleMediaUpdate(payload); });
-    m_messageHandlers.emplace(
-        "updateGraphic", [this](const rapidjson::Value& payload) { handleGraphicUpdate(payload); });
+    m_messageHandlers.emplace("updateGraphic", [this](const rapidjson::Value& payload) { handleGraphicUpdate(payload); });
     m_messageHandlers.emplace("response", [this](const rapidjson::Value& payload) { handleEventResponse(payload); });
     m_messageHandlers.emplace("ensureLayout", [this](const rapidjson::Value& payload) { handleEnsureLayout(payload); });
-    m_messageHandlers.emplace(
-        "scrollToRectInComponent", [this](const rapidjson::Value& payload) { handleScrollToRectInComponent(payload); });
-    m_messageHandlers.emplace(
-        "handleKeyboard", [this](const rapidjson::Value& payload) { handleHandleKeyboard(payload); });
-    m_messageHandlers.emplace(
-            "getFocusableAreas", [this](const rapidjson::Value& payload) { getFocusableAreas(payload); });
-    m_messageHandlers.emplace(
-            "getFocused", [this](const rapidjson::Value& payload) { getFocused(payload); });
-    m_messageHandlers.emplace(
-            "setFocus", [this](const rapidjson::Value& payload) { setFocus(payload); });
-    m_messageHandlers.emplace(
-        "updateCursorPosition", [this](const rapidjson::Value& payload) { handleUpdateCursorPosition(payload); });
-    m_messageHandlers.emplace(
-        "handlePointerEvent", [this](const rapidjson::Value& payload) { handleHandlePointerEvent(payload); });
-    m_messageHandlers.emplace(
-        "isCharacterValid", [this](const rapidjson::Value& payload) { handleIsCharacterValid(payload); });
+    m_messageHandlers.emplace("scrollToRectInComponent",[this](const rapidjson::Value& payload) { handleScrollToRectInComponent(payload); });
+    m_messageHandlers.emplace("handleKeyboard", [this](const rapidjson::Value& payload) { handleHandleKeyboard(payload); });
+    m_messageHandlers.emplace("getFocusableAreas", [this](const rapidjson::Value& payload) { getFocusableAreas(payload); });
+    m_messageHandlers.emplace("getFocused", [this](const rapidjson::Value& payload) { getFocused(payload); });
+    m_messageHandlers.emplace("setFocus", [this](const rapidjson::Value& payload) { setFocus(payload); });
+    m_messageHandlers.emplace("updateCursorPosition", [this](const rapidjson::Value& payload) { handleUpdateCursorPosition(payload); });
+    m_messageHandlers.emplace("handlePointerEvent", [this](const rapidjson::Value& payload) { handleHandlePointerEvent(payload); });
+    m_messageHandlers.emplace("isCharacterValid", [this](const rapidjson::Value& payload) { handleIsCharacterValid(payload); });
     m_messageHandlers.emplace("reInflate", [this](const rapidjson::Value& payload) { handleReInflate(payload); });
     m_messageHandlers.emplace("reHierarchy", [this](const rapidjson::Value& payload) { handleReHierarchy(payload); });
-    m_messageHandlers.emplace("getDisplayedChildCount", [this](const rapidjson::Value& payload) { handleGetDisplayedChildCount(payload); });
-    m_messageHandlers.emplace("getDisplayedChildId", [this](const rapidjson::Value& payload) { handleGetDisplayedChildId(payload); });
+    m_messageHandlers.emplace("extension", [this](const rapidjson::Value& payload) { handleExtensionMessage(payload); });
 }
 
 void AplCoreConnectionManager::setContent(const apl::ContentPtr content, const std::string& token) {
@@ -207,19 +198,19 @@ void AplCoreConnectionManager::setSupportedViewports(const std::string& jsonPayl
         std::string shape = spec.FindMember("shape")->value.GetString();
 
         m_ViewportSizeSpecifications.emplace_back(
-            minWidth,
-            maxWidth,
-            minHeight,
-            maxHeight,
-            AVS_VIEWPORT_MODE_MAP.at(mode),
-            AVS_VIEWPORT_SHAPE_MAP.at(shape) == apl::ScreenShape::ROUND);
+                minWidth,
+                maxWidth,
+                minHeight,
+                maxHeight,
+                AVS_VIEWPORT_MODE_MAP.at(mode),
+                AVS_VIEWPORT_SHAPE_MAP.at(shape) == apl::ScreenShape::ROUND);
     }
 }
 
 double AplCoreConnectionManager::getOptionalValue(
-    const rapidjson::Value& jsonNode,
-    const std::string& key,
-    double defaultValue) {
+        const rapidjson::Value& jsonNode,
+        const std::string& key,
+        double defaultValue) {
     double value = defaultValue;
     const auto& valueIt = jsonNode.FindMember(key);
     if (valueIt != jsonNode.MemberEnd()) {
@@ -230,9 +221,9 @@ double AplCoreConnectionManager::getOptionalValue(
 }
 
 std::string AplCoreConnectionManager::getOptionalValue(
-    const rapidjson::Value& jsonNode,
-    const std::string& key,
-    const std::string& defaultValue) {
+        const rapidjson::Value& jsonNode,
+        const std::string& key,
+        const std::string& defaultValue) {
     std::string value = defaultValue;
     const auto& valueIt = jsonNode.FindMember(key);
     if (valueIt != jsonNode.MemberEnd()) {
@@ -243,9 +234,9 @@ std::string AplCoreConnectionManager::getOptionalValue(
 }
 
 bool AplCoreConnectionManager::getOptionalBool(
-    const rapidjson::Value& jsonNode,
-    const std::string& key,
-    bool defaultValue) {
+        const rapidjson::Value& jsonNode,
+        const std::string& key,
+        bool defaultValue) {
     bool value = defaultValue;
     const auto& valueIt = jsonNode.FindMember(key);
     if (valueIt != jsonNode.MemberEnd()) {
@@ -256,9 +247,9 @@ bool AplCoreConnectionManager::getOptionalBool(
 }
 
 int AplCoreConnectionManager::getOptionalInt(
-    const rapidjson::Value& jsonNode,
-    const std::string& key,
-    int defaultValue) {
+        const rapidjson::Value& jsonNode,
+        const std::string& key,
+        int defaultValue) {
     if (jsonNode.HasMember(key) && jsonNode[key].IsInt()) {
         return jsonNode[key].GetInt();
     }
@@ -416,12 +407,12 @@ void AplCoreConnectionManager::executeCommands(const std::string& command, const
 }
 
 void AplCoreConnectionManager::onExtensionEvent(
-    const std::string& uri,
-    const std::string& name,
-    const std::string& source,
-    const std::string& params,
-    unsigned int event,
-    std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback) {
+        const std::string& uri,
+        const std::string& name,
+        const std::string& source,
+        const std::string& params,
+        unsigned int event,
+        std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback) {
     rapidjson::Document sourceDoc;
     rapidjson::Document paramsDoc;
 
@@ -437,7 +428,7 @@ void AplCoreConnectionManager::onExtensionEvent(
     }
 
     m_extensionManager->onExtensionEvent(
-        uri, name, apl::Object(sourceDoc), apl::Object(paramsDoc), event, resultCallback);
+            uri, name, apl::Object(sourceDoc), apl::Object(paramsDoc), event, resultCallback);
 }
 
 void AplCoreConnectionManager::onExtensionEventResult(unsigned int event, bool succeeded) {
@@ -476,7 +467,32 @@ void AplCoreConnectionManager::invokeExtensionEventHandler(
         return;
     }
     aplOptions->logMessage(LogLevel::DBG, "invokeExtensionEventHandler", +"< " + uri + ":" + name + " >");
-    m_Root->invokeExtensionEventHandler(uri, name, data, fastMode);
+    auto actnPtr = m_Root->invokeExtensionEventHandler(uri, name, data, fastMode);
+    if (actnPtr == nullptr) {
+        aplOptions->logMessage(LogLevel::ERROR, "invokeExtensionEventHandlerFailed", "No handler found");
+    }
+}
+
+void AplCoreConnectionManager::sendExtensionEvent(
+        const std::string &uri,
+        const std::string &name,
+        const apl::Object &source,
+        const apl::Object &params,
+        unsigned int event,
+        std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback) {
+    auto message = AplCoreViewhostMessage(EXTENSION_MESSAGE_KEY);
+
+    auto &mAlloc = message.alloc();
+    rapidjson::Value payload(rapidjson::kObjectType);
+    payload.AddMember("URI", uri, mAlloc);
+    payload.AddMember("type", "event", mAlloc);
+    payload.AddMember("name", name, mAlloc);
+
+    rapidjson::Value jsonParams = params.serialize(mAlloc);
+    payload.AddMember("params", jsonParams, mAlloc);
+
+    message.setPayload(std::move(payload));
+    send(message);
 }
 
 void AplCoreConnectionManager::dataSourceUpdate(
@@ -505,34 +521,70 @@ void AplCoreConnectionManager::dataSourceUpdate(
 
 void AplCoreConnectionManager::provideState(unsigned int stateRequestToken) {
     auto aplOptions = m_aplConfiguration->getAplOptions();
-
     auto timer = m_aplConfiguration->getMetricsRecorder()->createTimer(
             Telemetry::AplMetricsRecorderInterface::CURRENT_DOCUMENT,
             "APL-Web.RootContext.notifyVisualContext");
     timer->start();
     rapidjson::Document state(rapidjson::kObjectType);
     rapidjson::Document::AllocatorType& allocator = state.GetAllocator();
-    // Add presentation token info
-    state.AddMember(TOKEN_KEY, m_aplToken, allocator);
-    // Add version info
-    state.AddMember(VERSION_KEY, VERSION_VALUE, allocator);
-    rapidjson::Value arr(rapidjson::kArrayType);
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    if (m_Root && m_Root->topComponent()) {
-        auto context = m_Root->topComponent()->serializeVisualContext(allocator);
+
+    // Add presentation token info
+    state.AddMember(TOKEN_KEY, m_aplToken, allocator);
+
+    // Add version info
+    state.AddMember(VERSION_KEY, VERSION_VALUE, allocator);
+
+    // Add visual context info
+    state.AddMember(VISUAL_CONTEXT_KEY, getVisualContext(allocator), allocator);
+
+    // Add datasource context info
+    state.AddMember(DATASOURCE_CONTEXT_KEY, getDatasourceContext(allocator), allocator);
+
+    state.Accept(writer);
+    aplOptions->onVisualContextAvailable(m_aplToken, stateRequestToken, buffer.GetString());
+    timer->stop();
+}
+
+rapidjson::Value AplCoreConnectionManager::getVisualContext(rapidjson::Document::AllocatorType& allocator) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    auto timer = m_aplConfiguration->getMetricsRecorder()->createTimer(
+            Telemetry::AplMetricsRecorderInterface::CURRENT_DOCUMENT,
+            "APL-Web.RootContext.serializeVisualContext");
+    timer->start();
+    rapidjson::Value arr(rapidjson::kArrayType);
+    if (m_Root) {
+        auto context = m_Root->serializeVisualContext(allocator);
         arr.PushBack(context, allocator);
     } else {
-        aplOptions->logMessage(LogLevel::ERROR, "provideStateFailed", "Unable to get visual context");
+        aplOptions->logMessage(LogLevel::ERROR, "getVisualContextFailed", "Unable to get visual context");
         rapidjson::Value emptyObj(rapidjson::kObjectType);
         // add an empty visual context
         arr.PushBack(emptyObj, allocator);
     }
-    // Add visual context info
-    state.AddMember(CONTEXT_KEY, arr, allocator);
-    state.Accept(writer);
-    aplOptions->onVisualContextAvailable(m_aplToken, stateRequestToken, buffer.GetString());
     timer->stop();
+    return arr;
+}
+
+rapidjson::Value AplCoreConnectionManager::getDatasourceContext(rapidjson::Document::AllocatorType& allocator) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    auto timer = m_aplConfiguration->getMetricsRecorder()->createTimer(
+            Telemetry::AplMetricsRecorderInterface::CURRENT_DOCUMENT,
+            "APL-Web.RootContext.serializeDataSourceContext");
+    timer->start();
+    rapidjson::Value context;
+
+    if (m_Root) {
+        context = m_Root->serializeDataSourceContext(allocator);
+    } else {
+        aplOptions->logMessage(LogLevel::ERROR, "getDatasourceContextFailed", "Unable to get datasource context");
+        rapidjson::Value emptyDataSource(rapidjson::kArrayType);
+        // return empty datasource context
+        context = emptyDataSource;
+    }
+    timer->stop();
+    return context;
 }
 
 void AplCoreConnectionManager::interruptCommandSequence() {
@@ -595,9 +647,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                      .localTimeAdjustment(aplOptions->getTimezoneOffset().count())
                      .enforceAPLVersion(apl::APLVersion::kAPLVersionIgnore)
                      .sequenceChildCache(5)
-                     .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureHandleScrollingAndPagingInCore)
-                     .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureNotifyChildrenChangedOnDisplayChange)
-                     .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureHandleFocusInCore);
+                     .set(apl::RootProperty::kDefaultIdleTimeout, -1);
 
         // Data Sources
         config.dataSourceProvider(
@@ -664,7 +714,6 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
 
             sendViewhostScalingMessage();
 
-            m_renderingStart = std::chrono::steady_clock::now();
             m_StartTime = getCurrentTime();
             m_Root = apl::RootContext::create(m_AplCoreMetrics->getMetrics(), m_Content, config);
             if (m_Root) {
@@ -717,10 +766,10 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         sendDocumentBackgroundMessage(background);
 
         // Start rendering component hierarchy
-        auto reply = AplCoreViewhostMessage(HIERARCHY_KEY);
-        send(reply.setPayload(m_Root->topComponent()->serialize(reply.alloc())));
+        // and displaying Children
+        sendHierarchy(HIERARCHY_KEY);
 
-        auto idleTimeout = std::chrono::milliseconds(m_Root->settings().idleTimeout());
+        auto idleTimeout = std::chrono::milliseconds(m_Root->settings().idleTimeout(config));
         aplOptions->onSetDocumentIdleTimeout(m_aplToken, idleTimeout);
         aplOptions->onRenderDocumentComplete(m_aplToken, true, "");
     } else {
@@ -736,26 +785,8 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
 void AplCoreConnectionManager::onDocumentRendered(
         const std::chrono::steady_clock::time_point &renderTime,
         uint64_t complexityScore) {
-    if (m_renderingStart.time_since_epoch() > std::chrono::milliseconds(0)) {
-        auto metricsRecorder = m_aplConfiguration->getMetricsRecorder();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(renderTime - m_renderingStart);
-
-        auto timer = metricsRecorder->createTimer(
-            Telemetry::AplMetricsRecorderInterface::CURRENT_DOCUMENT,
-            "APL-Web.renderDocument");
-        timer->elapsed(elapsed);
-
-        if (complexityScore > 0) {
-            auto complexityTimer = metricsRecorder->createTimer(
-                Telemetry::AplMetricsRecorderInterface::CURRENT_DOCUMENT,
-                "APL-Web.renderDocument." + std::to_string(complexityScore));
-            complexityTimer->elapsed(elapsed);
-        }
-
-        metricsRecorder->flush();
-        m_renderingStart = std::chrono::steady_clock::time_point(std::chrono::milliseconds(0));
-    }
-
+    auto metricsRecorder = m_aplConfiguration->getMetricsRecorder();
+    metricsRecorder->flush();
 }
 
 void AplCoreConnectionManager::sendViewhostScalingMessage() {
@@ -997,6 +1028,12 @@ void AplCoreConnectionManager::handleHandleKeyboard(const rapidjson::Value& payl
 }
 
 void AplCoreConnectionManager::getFocusableAreas(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "getFocusableAreasFailed", "Root context is null");
+        return;
+    }
+
     auto messageId = payload["messageId"].GetString();
     auto message = AplCoreViewhostMessage("getFocusableAreas");
     auto result = m_Root->getFocusableAreas();
@@ -1058,7 +1095,7 @@ void AplCoreConnectionManager::setFocus(const rapidjson::Value& payload) {
     auto width = payload["origin"].FindMember("width")->value.Get<float>();
     auto height = payload["origin"].FindMember("height")->value.Get<float>();
 
-    auto origin = apl::Rect(top,left,width,height);
+    auto origin = apl::Rect(top, left, width, height);
     auto targetId = payload["targetId"].GetString();
     m_Root->setFocus(static_cast<apl::FocusDirection>(direction), origin, targetId);
 }
@@ -1136,8 +1173,8 @@ unsigned int AplCoreConnectionManager::send(AplCoreViewhostMessage& message) {
 }
 
 rapidjson::Document AplCoreConnectionManager::blockingSend(
-    AplCoreViewhostMessage& message,
-    const std::chrono::milliseconds& timeout) {
+        AplCoreViewhostMessage& message,
+        const std::chrono::milliseconds& timeout) {
     std::lock_guard<std::mutex> lock{m_blockingSendMutex};
     m_replyPromise = std::promise<std::string>();
     m_blockingSendReplyExpected = true;
@@ -1289,6 +1326,48 @@ bool AplCoreConnectionManager::addPendingEvent(unsigned int token, const apl::Ev
     return false;
 }
 
+void AplCoreConnectionManager::sendHierarchy(const std::string& messageKey, bool blocking) {
+    if (m_Root) {
+        auto reply = AplCoreViewhostMessage(messageKey);
+        rapidjson::Value hierarchy(rapidjson::kObjectType);
+        hierarchy.AddMember("hierarchy", m_Root->topComponent()->serialize(reply.alloc()), reply.alloc());
+
+        rapidjson::Value displayedChildrenHierarchy = buildDisplayedChildrenHierarchy(m_Root->topComponent(), reply);
+        hierarchy.AddMember("displayedChildrenHierarchy", displayedChildrenHierarchy, reply.alloc());
+
+        if (blocking) {
+            blockingSend(reply.setPayload(std::move(hierarchy)));
+        } else {
+            send(reply.setPayload(std::move(hierarchy)));
+        }
+    }
+}
+
+rapidjson::Value
+AplCoreConnectionManager::buildDisplayedChildrenHierarchy(const apl::ComponentPtr& component, AplCoreViewhostMessage& message) {
+    rapidjson::Value displayedChildrenHierarchy(rapidjson::kObjectType);
+    std::vector<apl::ComponentPtr> stack;
+    stack.push_back(component);
+
+    while(!stack.empty()) {
+        rapidjson::Value displayedChildrenUniqueIds(rapidjson::kArrayType);
+        apl::ComponentPtr node = stack.back();
+        stack.pop_back();
+        auto count = node->getDisplayedChildCount();
+        for (size_t i = 0; i < count; i++) {
+            auto childComponent = node->getDisplayedChildAt(i);
+            auto str = childComponent->getUniqueId();
+            displayedChildrenUniqueIds.PushBack(rapidjson::Value{}.SetString(str.c_str(), str.length(), message.alloc()), message.alloc());
+            stack.push_back(childComponent);
+        }
+        displayedChildrenHierarchy.AddMember(
+                rapidjson::Value{}.SetString(node->getUniqueId().c_str(), node->getUniqueId().length(),message.alloc()),
+                displayedChildrenUniqueIds,
+                message.alloc());
+    }
+    return displayedChildrenHierarchy;
+}
+
 void AplCoreConnectionManager::processDirty(const std::set<apl::ComponentPtr>& dirty) {
     std::map<std::string, rapidjson::Value> tempDirty;
     auto msg = AplCoreViewhostMessage(DIRTY_KEY);
@@ -1306,8 +1385,19 @@ void AplCoreConnectionManager::processDirty(const std::set<apl::ComponentPtr>& d
                 auto newChildIndex = changed.at(i).get("index").asInt();
                 auto action = changed.at(i).get("action").asString();
                 if (action == "insert") {
-                    tempDirty[newChildId] = component->getChildAt(newChildIndex)->serialize(msg.alloc());
+                    auto newComponent = component->getChildAt(newChildIndex);
+                    rapidjson::Value newComponentHierarchy = newComponent->serialize(msg.alloc());
+                    rapidjson::Value displayedChildrenHierarchy = buildDisplayedChildrenHierarchy(newComponent, msg);
+                    newComponentHierarchy.AddMember("displayedChildrenHierarchy", displayedChildrenHierarchy, msg.alloc());
+                    tempDirty[newChildId] = newComponentHierarchy;
                 }
+            }
+            if (tempDirty.find(component->getUniqueId()) == tempDirty.end()) {
+                // notify children change needs to update displayed children ids
+                rapidjson::Value dirtyWithChildChange = component->serializeDirty(msg.alloc());
+                rapidjson::Value displayedChildrenHierarchy = buildDisplayedChildrenHierarchy(component, msg);
+                dirtyWithChildChange.AddMember("displayedChildrenHierarchy", displayedChildrenHierarchy, msg.alloc());
+                tempDirty[component->getUniqueId()] = dirtyWithChildChange;
             }
         }
         if (component->getDirty().count(apl::kPropertyGraphic)) {
@@ -1324,7 +1414,7 @@ void AplCoreConnectionManager::processDirty(const std::set<apl::ComponentPtr>& d
                 serializedGraphicElement.AddMember("dirtyProperties", dirtyPropertyKeys, msg.alloc());
                 dirtyGraphicElement.PushBack(serializedGraphicElement, msg.alloc());
             }
-            if(vectorGraphicComponent.HasMember("graphic") && vectorGraphicComponent["graphic"].IsObject()) {
+            if (vectorGraphicComponent.HasMember("graphic") && vectorGraphicComponent["graphic"].IsObject()) {
                 vectorGraphicComponent["graphic"].AddMember("dirty", dirtyGraphicElement, msg.alloc());
             }
             tempDirty[component->getUniqueId()] = vectorGraphicComponent;
@@ -1435,7 +1525,7 @@ void AplCoreConnectionManager::serializeJSONValueToString(const rapidjson::Value
 }
 
 void AplCoreConnectionManager::addExtensions(
-    std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions) {
+        std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions) {
     for (auto& extension : extensions) {
         extension->setEventHandler(shared_from_this());
         m_extensionManager->addExtension(extension);
@@ -1521,140 +1611,44 @@ void AplCoreConnectionManager::handleReInflate(const rapidjson::Value& payload) 
     m_Root->reinflate();
 
     // update component hierarchy
-    auto reply = AplCoreViewhostMessage(HIERARCHY_KEY);
-    send(reply.setPayload(m_Root->topComponent()->serialize(reply.alloc())));
+    sendHierarchy(HIERARCHY_KEY);
 }
 
 void AplCoreConnectionManager::handleReHierarchy(const rapidjson::Value& payload) {
     // send component hierarchy
-    auto reply = AplCoreViewhostMessage(REHIERARCHY_KEY);
-    blockingSend(reply.setPayload(m_Root->topComponent()->serialize(reply.alloc())));
+    sendHierarchy(REHIERARCHY_KEY, true);
 }
 
 void AplCoreConnectionManager::updateConfigurationChange(const apl::ConfigurationChange& configurationChange) {
     m_ConfigurationChange.mergeConfigurationChange(configurationChange);
 }
 
-void AplCoreConnectionManager::handleGetDisplayedChildCount(const rapidjson::Value& payload) {
-    auto aplOptions = m_aplConfiguration->getAplOptions();
-    if (!m_Root) {
-        aplOptions->logMessage(LogLevel::ERROR, "handleGetDisplayedChildCountFailed", "Root context is null");
+void AplCoreConnectionManager::handleExtensionMessage(const rapidjson::Value& payload) {
+    auto const& uriMember = payload.FindMember("uri")->value;
+    auto const& nameMember = payload.FindMember("name")->value;
+    auto const& fastModeMember = payload.FindMember("fastMode")->value;
+    auto const aplOptions = m_aplConfiguration->getAplOptions();
+    if (!uriMember.IsString()
+        || !nameMember.IsString()
+        || !fastModeMember.IsBool()) {
+        aplOptions->logMessage(LogLevel::ERROR, "handleExtensionMessageFailed", "Could not parse extensionMessage");
         return;
     }
+    auto const uri = uriMember.GetString();
+    auto const name = nameMember.GetString();
+    auto const fastMode = fastModeMember.GetBool();
 
-    auto messageId = payload["messageId"].GetString();
-    if (!messageId) {
-        aplOptions->logMessage(
-                LogLevel::ERROR, "handleGetDisplayedChildCountFailed", std::string("Payload does not contain messageId"));
-        sendError("Payload does not contain messageId");
-        return;
+    auto const& dataMember = payload.FindMember("data")->value;
+    apl::ObjectMap data;
+    for (auto itr = dataMember.MemberBegin(); itr != dataMember.MemberEnd(); ++itr) {
+        if (!itr->value.IsString()) {
+            aplOptions->logMessage(LogLevel::ERROR, "handleExtensionMessageFailed",
+                                   "Could not parse extensionMessage data");
+            continue;
+        }
+        data.emplace(itr->name.GetString(), itr->value.GetString());
     }
-
-    auto componentId = payload["componentId"].GetString();
-    if (!componentId) {
-        aplOptions->logMessage(
-                LogLevel::ERROR, "handleGetDisplayedChildCountFailed", std::string("Payload does not contain componentId"));
-        sendError("Payload does not contain componentId");
-        return;
-    }
-    auto component = m_Root->findComponentById(componentId);
-    if (!component) {
-        aplOptions->logMessage(
-                LogLevel::ERROR,
-                "handleGetDisplayedChildCountFailed",
-                std::string("Unable to find component with id: ") + componentId);
-        sendError("Unable to find component");
-        return;
-    }
-
-    auto result = component->getDisplayedChildCount();
-
-    auto resultMessage = AplCoreViewhostMessage("getDisplayedChildCount");
-    auto& alloc = resultMessage.alloc();
-    rapidjson::Value resultMessageValue(rapidjson::kObjectType);
-
-    rapidjson::Value messageIdValue;
-    messageIdValue.SetString(messageId, alloc);
-    resultMessageValue.AddMember("messageId", messageIdValue, alloc);
-
-    resultMessageValue.AddMember("displayedChildCount", static_cast<unsigned int>(result), alloc);
-
-    rapidjson::Value componentIdValue;
-    componentIdValue.SetString(componentId, alloc);
-    resultMessageValue.AddMember("componentId", componentIdValue, alloc);
-
-    resultMessage.setPayload(std::move(resultMessageValue));
-    send(resultMessage);
+    invokeExtensionEventHandler(uri, name, data, fastMode);
 }
 
-void AplCoreConnectionManager::handleGetDisplayedChildId(const rapidjson::Value& payload) {
-    auto aplOptions = m_aplConfiguration->getAplOptions();
-    if (!m_Root) {
-        aplOptions->logMessage(LogLevel::ERROR, "handleGetDisplayedChildIdFailed", "Root context is null");
-        return;
-    }
-
-    auto messageId = payload["messageId"].GetString();
-    if (!messageId) {
-        aplOptions->logMessage(
-                LogLevel::ERROR, "handleGetDisplayedChildIdFailed", std::string("Payload does not contain messageId"));
-        sendError("Payload does not contain messageId");
-        return;
-    }
-
-    auto componentId = payload["componentId"].GetString();
-    if (!componentId) {
-        aplOptions->logMessage(
-                LogLevel::ERROR, "handleGetDisplayedChildIdFailed", std::string("Payload does not contain componentId"));
-        sendError("Payload does not contain componentId");
-        return;
-    }
-
-    auto displayIndexString = payload["displayIndex"].GetString();
-    if (!displayIndexString) {
-        aplOptions->logMessage(
-                LogLevel::ERROR, "handleGetDisplayedChildIdFailed", std::string("Payload does not contain displayIndex"));
-        sendError("Payload does not contain displayIndex");
-        return;
-    }
-
-    auto component = m_Root->findComponentById(componentId);
-    if (!component) {
-        aplOptions->logMessage(
-                LogLevel::ERROR,
-                "handleGetDisplayedChildIdFailed",
-                std::string("Unable to find component with id: ") + componentId);
-        sendError("Unable to find component");
-        return;
-    }
-
-    auto displayedChildCount = component->getDisplayedChildCount();
-    auto displayIndex = std::stoi(displayIndexString);
-
-    if (displayIndex >= displayedChildCount) {
-        aplOptions->logMessage(
-                LogLevel::ERROR, "handleGetDisplayedChildIdFailed", std::string("Asked for a component out of bounds."));
-        sendError("Asked for a component out of bounds.");
-        return;
-    }
-    auto displayedChild = component->getDisplayedChildAt(displayIndex);
-    auto displayedChildId = displayedChild->getUniqueId();
-
-    auto resultMessage = AplCoreViewhostMessage("getDisplayedChildId");
-    auto& alloc = resultMessage.alloc();
-    rapidjson::Value resultMessageValue(rapidjson::kObjectType);
-
-    rapidjson::Value messageIdValue;
-    messageIdValue.SetString(messageId, alloc);
-    resultMessageValue.AddMember("messageId", messageIdValue, alloc);
-
-    resultMessageValue.AddMember("displayedChildId", displayedChildId, alloc);
-
-    rapidjson::Value componentIdValue;
-    componentIdValue.SetString(componentId, alloc);
-    resultMessageValue.AddMember("componentId", componentIdValue, alloc);
-
-    resultMessage.setPayload(std::move(resultMessageValue));
-    send(resultMessage);
-}
 }  // namespace APLClient

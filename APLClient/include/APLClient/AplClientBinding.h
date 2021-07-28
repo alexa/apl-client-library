@@ -60,7 +60,7 @@ public:
      *
      * @return a shared pointer of @c DownloadMetricsEmitter already configured for telemetry.
      */
-    Telemetry::DownloadMetricsEmitterPtr createDownloadMetricsEmitter();
+    Telemetry::DownloadMetricsEmitterPtr createDownloadMetricsEmitter(const std::string& metricsPrefix = "APLClientDownloadManager");
 
     /**
      * Set an instance @c AplMetricsSinkInterface to the @c AplConfiguration

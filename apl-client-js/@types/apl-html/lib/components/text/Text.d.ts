@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,15 +32,15 @@ export interface ILine {
 }
 export declare class Text extends Component<ITextProperties> {
     setDimensions: () => void;
-    protected setTextOpacity: () => void;
     private setTextClamping;
     private setText;
+    private setLang;
     private setFontStyle;
     private setFontWeight;
+    private setFontFamily;
     private setLetterSpacing;
     private setFontSize;
     private setLineHeight;
-    private setFontFamily;
     private setTextAlign;
     private setTextAlignVertical;
     private setColor;

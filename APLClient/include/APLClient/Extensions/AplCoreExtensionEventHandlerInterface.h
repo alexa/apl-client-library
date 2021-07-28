@@ -15,8 +15,8 @@
 
 #include <string>
 
-#ifndef ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_EXTENSIONS_APLCOREEXTENSIONEVENTHANDLERINTERFACE_H
-#define ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_EXTENSIONS_APLCOREEXTENSIONEVENTHANDLERINTERFACE_H
+#ifndef APLCLIENT_EXTENSIONS_APLCOREEXTENSIONEVENTHANDLERINTERFACE_H
+#define APLCLIENT_EXTENSIONS_APLCOREEXTENSIONEVENTHANDLERINTERFACE_H
 
 namespace APLClient {
 namespace Extensions {
@@ -41,9 +41,26 @@ public:
         const std::string& name,
         const apl::ObjectMap& data,
         bool fastMode) = 0;
+
+    /**
+     * Implementor sends an Extension Event to the Viewhost
+     * @param uri Extension uri
+     * @param name Extension event name
+     * @param source Map of the source object that raised the event
+     * @param params Map of the user-specified properties
+     * @param event Event number
+     * @param resultCallback Pointer to result callback interface
+     */
+    virtual void sendExtensionEvent(
+        const std::string& uri,
+        const std::string& name,
+        const apl::Object& source,
+        const apl::Object& params,
+        unsigned int event,
+        std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback) = 0;
 };
 
 }  // namespace Extensions
 }  // namespace APLClient
 
-#endif  // ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_EXTENSIONS_APLCOREEXTENSIONEVENTHANDLERINTERFACE_H
+#endif  // APLCLIENT_EXTENSIONS_APLCOREEXTENSIONEVENTHANDLERINTERFACE_H

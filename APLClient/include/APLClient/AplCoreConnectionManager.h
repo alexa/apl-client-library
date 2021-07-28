@@ -68,6 +68,14 @@ public:
         const std::string& name,
         const apl::ObjectMap& data,
         bool fastMode) override;
+
+    void sendExtensionEvent(
+        const std::string& uri,
+        const std::string& name,
+        const apl::Object& source,
+        const apl::Object& params,
+        unsigned int event,
+        std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback) override;
     /// @}
 
     /// @name AplCoreExtensionEventCallbackResultInterface Functions
@@ -307,16 +315,10 @@ private:
     void getFocused(const rapidjson::Value& payload);
 
     /**
-     * Handle the getDisplayedChildCount message received from the viewhost
+     * Handle the extension message received from the viewhost
      * @param payload
      */
-    void handleGetDisplayedChildCount(const rapidjson::Value& payload);
-
-    /**
-     * Handle the getDisplayedChildId message received from the viewhost
-     * @param payload
-     */
-    void handleGetDisplayedChildId(const rapidjson::Value& payload);
+    void handleExtensionMessage(const rapidjson::Value& payload);
 
     /**
      * Handle the updateCursorPosition message received from the viewhost
@@ -379,6 +381,9 @@ private:
      */
     bool addPendingEvent(unsigned int token, const apl::Event& event, bool isViewhostEvent = true);
 
+    void sendHierarchy(const std::string& messageKey, bool blocking = false);
+
+    rapidjson::Value buildDisplayedChildrenHierarchy(const apl::ComponentPtr& component, AplCoreViewhostMessage& message);
     /**
      * Process set of dirty components and send out dirty properties as required.
      * @param dirty dirty components set.
@@ -484,6 +489,10 @@ private:
      */
     void updateConfigurationChange(const apl::ConfigurationChange& configurationChange);
 
+    rapidjson::Value getVisualContext(rapidjson::Document::AllocatorType& allocator);
+
+    rapidjson::Value getDatasourceContext(rapidjson::Document::AllocatorType& allocator);
+
     AplConfigurationPtr m_aplConfiguration;
 
     /// View host message type to handler map
@@ -544,8 +553,6 @@ private:
 
     /// Pointer to the active @c AplDocumentState to restore.
     AplDocumentStatePtr m_documentStateToRestore;
-
-    std::chrono::steady_clock::time_point m_renderingStart;
 };
 
 using AplCoreConnectionManagerPtr = std::shared_ptr<AplCoreConnectionManager>;

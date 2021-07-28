@@ -1,9 +1,14 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+import { ExtensionPayload } from './ExtensionMessageHandler';
 export interface RenderingOptionsPayload {
     legacyKaraoke: boolean;
+}
+export interface IHierarchyPayload {
+    hierarchy: IComponentPayload;
+    displayedChildrenHierarchy: object;
 }
 export interface IComponentPayload {
     children: IComponentPayload[];
@@ -79,27 +84,28 @@ export interface SupportsResizingPayload {
     supportsResizing: boolean;
 }
 export interface PayloadTypeMap {
-    "renderingOptions": RenderingOptionsPayload;
-    "measure": MeasurePayload;
-    "hierarchy": IComponentPayload;
-    "reHierarchy": IComponentPayload;
-    "scaling": ScalingPayload;
-    "event": EventPayload;
-    "dirty": IComponentPayload[];
-    "eventTerminate": EventTerminatePayload;
-    "baseline": BaselinePayload;
-    "docTheme": DocThemePayload;
-    "background": BackgroundPayload;
-    "screenLock": ScreenLockPayload;
-    "ensureLayout": string;
-    "isCharacterValid": IsCharacterValidPayload;
-    "handleKeyboard": OnHandleKeyboardPayload;
-    "localeMethod": LocaleMethodPayload;
-    "getFocusableAreas": FocusableAreasPayload;
-    "getFocused": FocusedPayload;
-    "getDisplayedChildCount": DisplayedChildCountPayload;
-    "getDisplayedChildId": DisplayedChildIdPayload;
-    "supportsResizing": SupportsResizingPayload;
+    'renderingOptions': RenderingOptionsPayload;
+    'measure': MeasurePayload;
+    'hierarchy': IHierarchyPayload;
+    'reHierarchy': IHierarchyPayload;
+    'scaling': ScalingPayload;
+    'event': EventPayload;
+    'dirty': IComponentPayload[];
+    'eventTerminate': EventTerminatePayload;
+    'baseline': BaselinePayload;
+    'docTheme': DocThemePayload;
+    'background': BackgroundPayload;
+    'screenLock': ScreenLockPayload;
+    'ensureLayout': string;
+    'isCharacterValid': IsCharacterValidPayload;
+    'handleKeyboard': OnHandleKeyboardPayload;
+    'localeMethod': LocaleMethodPayload;
+    'getFocusableAreas': FocusableAreasPayload;
+    'getFocused': FocusedPayload;
+    'getDisplayedChildCount': DisplayedChildCountPayload;
+    'getDisplayedChildId': DisplayedChildIdPayload;
+    'supportsResizing': SupportsResizingPayload;
+    'extension': ExtensionPayload;
 }
 export interface Message<Type extends keyof PayloadTypeMap> {
     type: Type;
@@ -107,9 +113,9 @@ export interface Message<Type extends keyof PayloadTypeMap> {
     payload: PayloadTypeMap[Type];
 }
 export interface APLCLientEventTypeMap {
-    "close": CloseEvent;
-    "error": Event;
-    "open": Event;
+    'close': CloseEvent;
+    'error': Event;
+    'open': Event;
 }
 export interface IAPLClientListener {
     onOpen?(): void;
@@ -117,33 +123,35 @@ export interface IAPLClientListener {
     onError?(): void;
 }
 export interface IAPLMessageListener {
-    onMeasure?(message: Message<"measure">): void;
-    onRenderingOptions?(message: Message<"renderingOptions">): void;
-    onHierarchy?(message: Message<"hierarchy">): void;
-    onReHierarchy?(message: Message<"reHierarchy">): void;
-    onScaling?(message: Message<"scaling">): void;
-    onDirty?(message: Message<"dirty">): void;
-    onEvent?(message: Message<"event">): void;
-    onEventTerminate?(message: Message<"eventTerminate">): void;
-    onBaseline?(message: Message<"baseline">): void;
-    onDocTheme?(message: Message<"docTheme">): void;
-    onBackground?(message: Message<"background">): void;
-    onScreenLock?(message: Message<"screenLock">): void;
-    onEnsureLayout?(message: Message<"ensureLayout">): void;
-    onIsCharacterValid?(message: Message<"isCharacterValid">): void;
-    onHandleKeyboard?(message: Message<"handleKeyboard">): void;
-    onLocaleMethod?(message: Message<"localeMethod">): void;
-    onGetFocusableAreas?(message: Message<"getFocusableAreas">): void;
-    onGetFocused?(message: Message<"getFocused">): void;
-    onGetDisplayedChildCount?(message: Message<"getDisplayedChildCount">): void;
-    onGetDisplayedChildId?(message: Message<"getDisplayedChildId">): void;
-    onSupportsResizing?(message: Message<"supportsResizing">): void;
+    onMeasure?(message: Message<'measure'>): void;
+    onRenderingOptions?(message: Message<'renderingOptions'>): void;
+    onHierarchy?(message: Message<'hierarchy'>): void;
+    onReHierarchy?(message: Message<'reHierarchy'>): void;
+    onScaling?(message: Message<'scaling'>): void;
+    onDirty?(message: Message<'dirty'>): void;
+    onEvent?(message: Message<'event'>): void;
+    onEventTerminate?(message: Message<'eventTerminate'>): void;
+    onBaseline?(message: Message<'baseline'>): void;
+    onDocTheme?(message: Message<'docTheme'>): void;
+    onBackground?(message: Message<'background'>): void;
+    onScreenLock?(message: Message<'screenLock'>): void;
+    onEnsureLayout?(message: Message<'ensureLayout'>): void;
+    onIsCharacterValid?(message: Message<'isCharacterValid'>): void;
+    onHandleKeyboard?(message: Message<'handleKeyboard'>): void;
+    onLocaleMethod?(message: Message<'localeMethod'>): void;
+    onGetFocusableAreas?(message: Message<'getFocusableAreas'>): void;
+    onGetFocused?(message: Message<'getFocused'>): void;
+    onGetDisplayedChildCount?(message: Message<'getDisplayedChildCount'>): void;
+    onGetDisplayedChildId?(message: Message<'getDisplayedChildId'>): void;
+    onSupportsResizing?(message: Message<'supportsResizing'>): void;
+    onExtensionEvent?(message: Message<'extension'>): void;
 }
 /**
  * Extend this class to implement a client. Must implement events described in
  * `IAPLClient`
  */
 export declare abstract class APLClient {
+    private logger;
     constructor();
     /**
      * Override this method to send a message
@@ -168,27 +176,28 @@ export declare abstract class APLClient {
      * Call this when the client return isCharacterValid message with result;
      * @param message
      */
-    protected isCharacterValid(message: Message<"isCharacterValid">): void;
+    protected isCharacterValid(message: Message<'isCharacterValid'>): void;
     /**
      * Call this when the client return getDisplayedChildCount message with result
      * @param message
      */
-    protected getDisplayedChildCount(message: Message<"getDisplayedChildCount">): void;
+    protected getDisplayedChildCount(message: Message<'getDisplayedChildCount'>): void;
     /**
      * Call this when the client return getDisplayedChildId message with result
      * @param message
      */
-    protected getDisplayedChildId(message: Message<"getDisplayedChildId">): void;
+    protected getDisplayedChildId(message: Message<'getDisplayedChildId'>): void;
     /**
      * Call this when the client return handleKeyboard message with result;
      * @param message
      */
-    protected handleKeyboard(message: Message<"handleKeyboard">): void;
+    protected handleKeyboard(message: Message<'handleKeyboard'>): void;
     /**
      * Call this when the client return supportsResizing message with result;
      * @param message
      */
-    protected supportsResizing(message: Message<"supportsResizing">): void;
+    protected supportsResizing(message: Message<'supportsResizing'>): void;
+    protected extension(message: Message<'extension'>): void;
     /**
      * Call this when the client receives a message from the server
      */

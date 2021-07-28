@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@ import { UpdateType } from '../enums/UpdateType';
 import { ILogger } from '../logging/ILogger';
 import { GradientSpreadMethod } from '../enums/GradientSpreadMethod';
 import { GradientUnits } from '../enums/GradientUnits';
+import { LayoutDirection } from '../enums/LayoutDirection';
 export declare const SVG_NS = "http://www.w3.org/2000/svg";
 export declare const uuidv4: any;
 export declare const IDENTITY_TRANSFORM = "matrix(1.000000,0.000000,0.000000,1.000000,0.000000,0.000000)";
@@ -18,8 +19,6 @@ export declare const IDENTITY_TRANSFORM = "matrix(1.000000,0.000000,0.000000,1.0
 export interface IGenericPropType {
     [key: number]: any;
 }
-export declare const copyAsPixels: (from: any, to: HTMLElement, propertyName: string) => void;
-export declare const fitElementToRectangle: (element: HTMLElement, rectangle: APL.Rect) => void;
 /**
  * @ignore
  */
@@ -58,6 +57,8 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
     bounds: APL.Rect;
     /** Absolute calculated inner bounds of this component */
     innerBounds: APL.Rect;
+    /** Display direction of this component */
+    protected layoutDirection: LayoutDirection;
     /** Component unique ID */
     id: string;
     /** User assigned ID */
@@ -87,11 +88,13 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
      * @ignore
      */
     init(): void;
+    private ensureDisplayedChildren();
     /**
      * Get all displayed child count
      * @ignore
      */
-    getDisplayedChildCount(): Promise<number>;
+    getDisplayedChildCount(): number;
+    getDisplayedChildren(): APL.Component[];
     protected onPropertiesUpdated(): void;
     /**
      * @param props
@@ -115,13 +118,15 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
      */
     destroy(destroyComponent?: boolean): void;
     /**
-     * Converts a number to css rgba format
-     * @param val Number value to convert
+     * @Deprecated Use GraphicsUtils#numberToColor
      */
     static numberToColor(val: number): string;
     static getGradientSpreadMethod(gradientSpreadMethod: GradientSpreadMethod): string;
     static getGradientUnits(gradientUnits: GradientUnits): string;
-    static fillAndStrokeConverter(val: object, transform: string, parent: Element, logger: ILogger): IValueWithReference | undefined;
+    /**
+     * @Deprecated Use GraphicsUtils#fillAndStrokeConverter
+     */
+    static fillAndStrokeConverter(value: object, transform: string, parent: Element, logger: ILogger): IValueWithReference | undefined;
     hasValidBounds(): boolean;
     static getClipPathElementId(pathData: string, parent: Element): string;
     inflateAndAddChild(index: number, data: string): Component | undefined;
@@ -129,6 +134,10 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
     protected boundsUpdated(): void;
     protected isLayout(): boolean;
     /**
+     * Resizes child component to fit parent component when applicable
+     */
+    private sizeToFit();
+    /** @deprecated Use SizeToFit
      * If parent is Container component and this component is layout components then limit size of child to
      * offset+size of parent to overcome broken skills
      */
@@ -137,6 +146,8 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
     protected getProperties(): PropsType;
     protected setTransform: () => void;
     protected setOpacity: () => void;
+    protected setLayoutDirection: () => void;
+    protected isRtl: () => boolean;
     forceInvisible(doForceInvisible: boolean): void;
     protected getNormalDisplay(): string;
     protected setDisplay: () => void;
@@ -147,4 +158,5 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
     private setShadow;
     protected applyCssShadow: (shadowParams: string) => void;
     protected takeFocus(): Promise<void>;
+    protected readonly lang: string;
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@ export interface IVideoProperties extends IComponentProperties {
     [PropertyKey.kPropertySource]: IMediaSource | IMediaSource[];
     [PropertyKey.kPropertyTrackCurrentTime]: number;
     [PropertyKey.kPropertyTrackIndex]: number;
+    [PropertyKey.kPropertyTrackPaused]: boolean;
 }
 /**
  * @ignore
@@ -42,9 +43,11 @@ export declare abstract class AbstractVideoComponent extends Component<IVideoPro
     protected abstract setSource(source: IMediaSource | IMediaSource[]): any;
     protected abstract setTrackCurrentTime(trackCurrentTime: number): any;
     protected abstract setTrackIndex(trackIndex: number): any;
+    protected setTrackPaused(isPaused: boolean): void;
     private setScaleFromProp;
     private setAudioTrackFromProp;
     private setSourceFromProp;
     private setTrackCurrentTimeFromProp;
     private setTrackIndexFromProp;
+    private setPauseFromProp;
 }

@@ -1,16 +1,16 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { GraphicData } from "./avg/APLGraphic";
-import { GraphicPatternData } from "./avg/APLGraphicPattern";
+import { GraphicData } from './avg/APLGraphic';
+import { GraphicPatternData } from './avg/APLGraphicPattern';
 import { Filter } from 'apl-html';
 export declare function toRect(value: [number, number, number, number]): APL.Rect | undefined;
 export declare function toTransform(value: [number, number, number, number, number, number]): string;
 export declare function toColor(value: any): number;
 export declare function toStyledText(value: {
     text: string;
-    spans: Array<[number, number, number]>;
+    spans: Array<[number, number, number, APL.SpanAttribute[]]>;
 }): APL.StyledText | string;
 export declare function toGraphic(value: GraphicData): APL.Graphic | undefined;
 export declare function toGraphicPattern(value: GraphicPatternData): APL.GraphicPattern | undefined;

@@ -1,8 +1,9 @@
-/// <reference path="dts/Module.d.ts" />
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/// <reference path="dts/Module.d.ts" />
 import './assets/css/fonts.css';
 import APLRenderer from './APLRenderer';
 export default APLRenderer;
@@ -77,8 +78,15 @@ export * from './enums/GraphicFilterType';
 export * from './enums/GraphicPropertyKey';
 export * from './extensions/IExtensionManager';
 export * from './extensions/IExtensionEventCallbackResult';
+export * from './extensions/e2eencryption/E2EEncryptionExtension';
+export * from './extensions/CreateExtension';
+export { testUtils } from './extensions/e2eencryption/CryptoUtils';
+export * from './extensions/IExtension';
+export * from './extensions/LiveArray';
+export * from './extensions/LiveMap';
 export * from './media/PlaybackManager';
 export * from './media/Resource';
+export * from './utils/EventUtils';
 export * from './utils/FilterUtils';
 export * from './utils/FontUtils';
 export * from './utils/SoftRandom';

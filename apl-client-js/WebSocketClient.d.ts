@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { APLClient } from "./APLClient";
+import { APLClient } from './APLClient';
 /**
  * Implements the WebSocket version of an APLClient connection.
  */

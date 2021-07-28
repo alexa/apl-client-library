@@ -21,12 +21,12 @@
 #include <APLClient/Extensions/AudioPlayer/AplAudioPlayerExtension.h>
 #include <APLClient/Extensions/AudioPlayer/AplAudioPlayerAlarmsExtension.h>
 #include <APLClient/Extensions/Backstack/AplBackstackExtension.h>
+#include "APLClient/Extensions/E2EEncryption/AplE2EEncryptionExtension.h"
 #include <APLClient/AplOptionsInterface.h>
 #include <mutex>
 #include <string>
 #include "APLClientSandbox/Executor.h"
 #include "GUIManager.h"
-
 
 class GUIManager;
 
@@ -200,6 +200,9 @@ private:
 
     /// Pointer to the @c AplBackstackExtension
     std::shared_ptr<APLClient::Extensions::Backstack::AplBackstackExtension> m_backstackExtension;
+
+    /// Pointer to the @c E2EEncryption
+    std::shared_ptr<APLClient::Extensions::E2EEncryption::AplE2EEncryptionExtension> m_encryptionExtension;
 
     /// Pointer to the @c AplAudioPlayerExtension
     std::shared_ptr<APLClient::Extensions::AudioPlayer::AplAudioPlayerExtension> m_audioPlayerExtension;

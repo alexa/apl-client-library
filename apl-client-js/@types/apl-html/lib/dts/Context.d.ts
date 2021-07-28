@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@ declare namespace APL {
         public getTheme(): string;
         public getBackground(): APL.IBackground;
         public setBackground(background: APL.IBackground): void;
+        public getDataSourceContext(): string;
         public getVisualContext(): string;
         public clearPending(): void;
         public isDirty(): boolean;

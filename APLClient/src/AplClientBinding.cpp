@@ -30,8 +30,8 @@ std::shared_ptr<AplClientRenderer> AplClientBinding::createRenderer(const std::s
     return std::make_shared<AplClientRenderer>(m_aplConfiguration, windowId);
 }
 
-Telemetry::DownloadMetricsEmitterPtr AplClientBinding::createDownloadMetricsEmitter() {
-    return std::make_shared<Telemetry::DownloadMetricsEmitter>(m_aplConfiguration->getMetricsRecorder());
+Telemetry::DownloadMetricsEmitterPtr AplClientBinding::createDownloadMetricsEmitter(const std::string& metricsPrefix) {
+    return std::make_shared<Telemetry::DownloadMetricsEmitter>(m_aplConfiguration->getMetricsRecorder(), metricsPrefix);
 }
 
 void AplClientBinding::onTelemetrySinkUpdated(APLClient::Telemetry::AplMetricsSinkInterfacePtr sink) {

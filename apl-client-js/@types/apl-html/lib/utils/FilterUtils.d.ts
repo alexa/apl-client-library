@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 import { FilterType } from '../enums/FilterType';
 import { IColor } from '../components/filters/Color';
 import { IBlur } from '../components/filters/Blur';

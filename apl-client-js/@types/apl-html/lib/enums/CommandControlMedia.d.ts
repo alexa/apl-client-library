@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 export declare enum CommandControlMedia {
     kCommandControlMediaPlay = 0,
     kCommandControlMediaPause = 1,

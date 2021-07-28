@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 import { LogLevel } from './LogLevel';
 /**
  * Simple function type to be provided on log initialization to change transport method.

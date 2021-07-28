@@ -58,7 +58,7 @@ static const std::string DOCUMENT_APL_WITH_PACKAGE = "{"
                          "}";
 
 const std::string SOURCE =
-            "https://d2na8397m465mh.cloudfront.net/packages/alexa-viewport-profiles/1.0.0/document.json";
+            "https://arl.assets.apl-alexa.com/packages/alexa-viewport-profiles/1.0.0/document.json";
 
 static const std::string TOKEN = "";
 

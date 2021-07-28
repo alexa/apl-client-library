@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 export declare function toActualSize(value: number): number;
 export declare function toFillOrStroke(value: any): any;
 export interface GraphicElementData {

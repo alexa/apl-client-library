@@ -23,7 +23,12 @@ class WebsocketConnection {
     connect() {
         const self = this;
 
-        this.socket = new WebSocket("ws://localhost:8080");
+        const socketUrl = (
+            (['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname))
+            ? `ws://${window.location.hostname}:8080` : `ws://${window.location.host}`
+        );
+
+        this.socket = new WebSocket(socketUrl);
 
         this.socket.onopen = function(e) {
             console.debug("[Websocket] Connection established");
@@ -82,12 +87,32 @@ class Client extends APLClient.APLClient {
     }
 }
 
-let handleMessage = (data) => {
+const formatMetricLog = (date, metric) => {
+    const { name, value } = metric;
+    const identifier = 'APL-WebViewhostMetrics';
+
+    const month = ('0' + (date.getMonth() + 1)).slice(-2);
+    const day = ('0' + date.getDate()).slice(-2);
+
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+
+    return `${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds} | ${identifier} : name="${name}" value=${value}`;
+};
+
+const handleMessage = (data) => {
     switch(data.type) {
         case 'reset':
             resetViewhost();
             break;
         case 'viewhost':
+            const payload = JSON.parse(data.payload);
+            if (payload.type === 'metric') {
+                const metric = payload.payload;
+                return console.log(formatMetricLog(new Date(), metric));
+            }
             client.onMessage(JSON.parse(data.payload));
             break;
         case 'resourcerequest':
@@ -140,7 +165,7 @@ let resetViewhost = () => {
     const width = parseInt(document.getElementById('width').value);
     const dpi = parseInt(document.getElementById('dpi').value);
     const environment = {
-        agentName: 'SmartScreenSDK',
+        agentName: 'APLClientSandbox',
         agentVersion: '1.0',
         disallowVideo: false,
         allowOpenUrl: false,
@@ -168,6 +193,7 @@ let resetViewhost = () => {
     if(document.getElementById("musicAlarmsExtensions").checked){
         supportedExtensions.push('aplext:musicalarm:10');
     }
+    supportedExtensions.push('aplext:e2eencryption:10');
 
     const options = {
         view: rendererElement,
@@ -183,7 +209,7 @@ let resetViewhost = () => {
     if (renderer) {
         renderer.destroy();
     }
-
+    waitForFirstMeaningfulPaint(30, 2000);
     // Reset rotation
     rendererElement.style.transition = 'unset';
     rendererElement.style.transform = 'rotate(0deg)';
@@ -197,6 +223,43 @@ let resetViewhost = () => {
     });
 };
 
+function toNanoseconds(milliseconds) {
+    // DOMHighResTimeStamps are accurate to within 5 microseconds
+    const microseconds = Math.round(milliseconds * 1000);
+    return microseconds * 1000;
+}
+
+const RENDER_DOCUMENT_START = 'renderClick';
+const RENDER_DOCUMENT_END = 'firstMeaningfulPaint';
+const RENDER_DOCMENT_METRIC = 'APL-Web.renderDocument';
+
+function waitForFirstMeaningfulPaint(delayMs, tries) {
+    const keepWaiting = () => {
+        setTimeout(() => {
+                waitForFirstMeaningfulPaint(delayMs, tries - 1)
+            },
+            delayMs);
+    }
+
+    if (rendererElement && rendererElement.querySelector('p')) {
+        performance.mark(RENDER_DOCUMENT_END);
+        performance.measure(RENDER_DOCMENT_METRIC, RENDER_DOCUMENT_START, RENDER_DOCUMENT_END);
+        const renderDocumentEntries = performance.getEntriesByName(RENDER_DOCMENT_METRIC)
+        for (let i = 0; i < renderDocumentEntries.length; i++) {
+            const metric = {
+                name: RENDER_DOCMENT_METRIC,
+                value: toNanoseconds(renderDocumentEntries[i].duration)
+            }
+            console.log(formatMetricLog(new Date(), metric));
+        }
+        performance.clearMeasures(RENDER_DOCMENT_METRIC);
+    } else if (tries > 0) {
+        keepWaiting();
+    } else {
+        console.error('Could not detect meaningful paint.');
+    }
+}
+
 let renderDocument = () => {
     const doc = document.getElementById('document').value;
     const data = document.getElementById('data').value;
@@ -208,6 +271,7 @@ let renderDocument = () => {
     rendererElement = document.getElementById('renderer');
 
     applyScale();
+    performance.mark(RENDER_DOCUMENT_START);
 
     localStorage.setItem('document', doc);
     localStorage.setItem('data', data);
@@ -223,7 +287,6 @@ let renderDocument = () => {
         data,
         viewports
     });
-
 };
 
 let resizingIgnored = (width, height) => {

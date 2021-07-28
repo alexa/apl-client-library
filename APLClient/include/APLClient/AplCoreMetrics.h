@@ -13,8 +13,8 @@
  * permissions and limitations under the License.
  */
 
-#ifndef ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLCOREMETRICS_H
-#define ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLCOREMETRICS_H
+#ifndef APLCLIENT_APL_APLCOREMETRICS_H
+#define APLCLIENT_APL_APLCOREMETRICS_H
 
 #include <apl/scaling/metricstransform.h>
 
@@ -70,4 +70,4 @@ using AplCoreMetricsPtr = std::shared_ptr<AplCoreMetrics>;
 
 }  // namespace APLClient
 
-#endif  // ALEXA_SMART_SCREEN_SDK_APPLICATIONUTILITIES_APL_APLCOREMETRICS_H
+#endif  // APLCLIENT_APL_APLCOREMETRICS_H

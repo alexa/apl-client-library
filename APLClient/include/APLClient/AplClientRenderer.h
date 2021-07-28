@@ -159,6 +159,13 @@ public:
      */
     void restoreDocumentState(AplDocumentStatePtr documentState);
 
+    /**
+     * Handle the displayMetrics message received from the sandbox
+     * @param message
+     */
+    void handleDisplayMetrics(const std::string& message);
+
+
     /// @name AplRenderingEventObserver Functions
     /// @{
     void onRenderDirectiveReceived(const std::chrono::steady_clock::time_point &receiveTime) override;
@@ -177,6 +184,9 @@ public:
 
 private:
     AplConfigurationPtr m_aplConfiguration;
+
+    /// View host message type to handler map interceptors
+    std::map<std::string, std::function<void(const std::string&)>> m_messageHandlers;
 
     std::string m_windowId;
 

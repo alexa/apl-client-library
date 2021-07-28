@@ -1,7 +1,8 @@
-/**
+/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 export declare enum UpdateType {
     kUpdatePressed = 0,
     /**     * This component should take keyboard focus.     */
