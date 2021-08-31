@@ -359,6 +359,8 @@ public:
     /// Setting up m_Root
     void BuildDocument(const std::string, const std::string, const std::string);
 
+    void SetupMocksForDocumentRender();
+
 protected:
     std::shared_ptr<MockAplOptionsInterface> m_mockAplOptions;
 
@@ -373,6 +375,15 @@ void AplCoreConnectionManagerTest::SetUp() {
     m_mockAplOptions = std::make_shared<NiceMock<MockAplOptionsInterface>>();
     m_aplConfiguration = std::make_shared<AplConfiguration>(m_mockAplOptions);
     m_aplCoreConnectionManager = std::make_shared<AplCoreConnectionManager>(m_aplConfiguration);
+}
+
+void AplCoreConnectionManagerTest::SetupMocksForDocumentRender() {
+    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(AtLeast(1));
+    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(AtLeast(1)).WillRepeatedly(Return(std::chrono::milliseconds()));
+    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(AtLeast(1));
 }
 
 void AplCoreConnectionManagerTest::TearDown() {
@@ -449,21 +460,6 @@ TEST_F(AplCoreConnectionManagerTest, BlockingSendSuccess) {
     ASSERT_TRUE(result.IsObject());
 }
 
-/**
- * Tests HandleMessage function with build type.
- */
-TEST_F(AplCoreConnectionManagerTest, HandleBuildSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
-
-    BuildDocument(DOCUMENT, DATA, VIEWPORT);
-}
-
 TEST_F(AplCoreConnectionManagerTest, HandleDynamicDataSource) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(2);
@@ -505,55 +501,8 @@ TEST_F(AplCoreConnectionManagerTest, HandleDynamicDataSource) {
     m_aplCoreConnectionManager->dataSourceUpdate("dynamicTokenList", tokenPayload, token);
 }
 
-TEST_F(AplCoreConnectionManagerTest, HandleConfigurationChangeSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
-    // Given build document with reInflate defined in handleConfigurationChange successfully.
-    BuildDocument(DOCUMENT, DATA, VIEWPORT);
-    // When configuration change is handled.
-    // Then reInflate event should be send.
-    const std::string configChange =
-        "{"
-        "  \"type\":\"configurationChange\","
-        "  \"payload\":{"
-        "     \"width\": 1080,"
-        "     \"height\": 1920,"
-        "     \"docTheme\": \"dark\","
-        "     \"mode\": \"TV\","
-        "     \"fontScale\": 1.5,"
-        "     \"screenMode\": \"normal\","
-        "     \"screenReader\": false"
-        "  }"
-        "}";
-    const std::string scalingMessageType = "\"type\":\"scaling\"";
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(scalingMessageType, ""))).Times(1);
-    const std::string themeMessageType = "\"type\":\"docTheme\"";
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(themeMessageType, ""))).Times(1);
-    m_aplCoreConnectionManager->handleMessage(configChange);
-    int reInflateEvent = apl::EventType::kEventTypeReinflate;
-    const std::string messageType = "\"type\":\"event\"";
-    const std::string expectedPayload = "\"payload\":{\"type\":" + std::to_string(reInflateEvent) + "},\"seqno\":13}";
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(messageType, expectedPayload))).Times(1);
-    m_aplCoreConnectionManager->onUpdateTick();
-    const std::string payload=
-            "  {"
-            "    \"type\":\"response\","
-            "    \"payload\":{"
-            "      \"event\":13"
-            "    }"
-            "  }";
-    m_aplCoreConnectionManager->handleMessage(payload);
-}
-
 TEST_F(AplCoreConnectionManagerTest, CheckDocumentTimeoutInSettings) {
     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(10);
     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, std::chrono::milliseconds(123))).Times((1));
@@ -563,12 +512,7 @@ TEST_F(AplCoreConnectionManagerTest, CheckDocumentTimeoutInSettings) {
 }
 
 TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(6);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(10));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
+    SetupMocksForDocumentRender();
     EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, true)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
@@ -596,12 +540,7 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
 }
 
 TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsInterrupt) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
+    SetupMocksForDocumentRender();
     EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, false)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
@@ -624,19 +563,12 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsInterrupt) {
 }
 
 /**
- * Tests HandleMessage function with update type.
- */
+* Tests HandleMessage function with update type.
+*/
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
+    SetupMocksForDocumentRender();
 
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
-
     const ::std::string payload =
         "{"
         "  \"type\":\"update\","
@@ -650,18 +582,12 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateSuccess) {
     m_aplCoreConnectionManager->handleMessage(payload);
 }
 
+
 /**
  * Tests HandleMessage function with updateMedia type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateMediaSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const ::std::string payload =
@@ -689,14 +615,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateMediaSuccess) {
  * Tests HandleMessage function with updateGraphic type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleGraphicUpdateSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const ::std::string payload =
@@ -738,12 +657,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleGraphicUpdateSuccess) {
  * Tests HandleMessage function with response type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleEventResponseSuccess) {
-
-     EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-     EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(2);
-     EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(2).WillRepeatedly(Return(std::chrono::milliseconds()));
-     EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-     EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
+     SetupMocksForDocumentRender();
      EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
      EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
 
@@ -778,14 +692,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleEventResponseSuccess) {
  * Tests HandleMessage function with ensureLayout type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleEnsureLayoutSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(10));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const std::string payload =
@@ -803,14 +710,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleEnsureLayoutSuccess) {
  * Tests HandleMessage function with scrollToRectInComponent type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleScrollToRectInComponentSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const std::string payload =
@@ -833,14 +733,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleScrollToRectInComponentSuccess) {
  * Tests HandleMessage function with handleKeyboard type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleKeyboardSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(10));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const std::string payload =
@@ -866,14 +759,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleKeyboardSuccess) {
  * Tests HandleMessage function with updateCursorPosition type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateCursorPositionSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const std::string payload =
@@ -891,14 +777,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateCursorPositionSuccess) {
  * Tests HandleMessage function with handlePointerEvent type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandlePointerEventSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(1);
-
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
 
     const std::string payload =
@@ -920,20 +799,11 @@ TEST_F(AplCoreConnectionManagerTest, HandlePointerEventSuccess) {
  * Test HandleMessage function with reinflate.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleReInflateSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
+    SetupMocksForDocumentRender();
     // Given a document build success.
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
-    // When reInflate received
-    // Then document rebuild with measure message, scale message, theme message and hierarchy message send out.
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(3);
     const std::string measureMessageType = "\"type\":\"measure\"";
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(measureMessageType, ""))).Times(3);
+    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(measureMessageType, ""))).Times(AtLeast(1));
     const std::string hierarchyMessageType = "\"type\":\"hierarchy\"";
     EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(hierarchyMessageType, ""))).Times(1);
 
@@ -946,13 +816,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleReInflateSuccess) {
 }
 
 TEST_F(AplCoreConnectionManagerTest, HandleReHierarchySuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
+    SetupMocksForDocumentRender();
     // Given a document build success.
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
     // When reHierarchy received
@@ -969,13 +833,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleReHierarchySuccess) {
 }
 
 TEST_F(AplCoreConnectionManagerTest, ProvideStateSuccess) {
-    EXPECT_CALL(*m_mockAplOptions, resetViewhost(_)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderingEvent(_, _)).Times(5);
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, _)).Times(AtLeast(9));
-    EXPECT_CALL(*m_mockAplOptions, getTimezoneOffset()).Times(1).WillOnce(Return(std::chrono::milliseconds()));
-    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onSetDocumentIdleTimeout(_, _)).Times((1));
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, true, _)).Times(1);
+    SetupMocksForDocumentRender();
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
     EXPECT_CALL(*m_mockAplOptions, onVisualContextAvailable(_, _, _)).Times(1);
     m_aplCoreConnectionManager->provideState(1);
