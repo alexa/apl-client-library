@@ -19,7 +19,7 @@ export declare abstract class AudioPlayer {
     abstract play(id: string): any;
     protected playWithContext(id: string, audioContext: AudioContext): void;
     protected setCurrentAudioNode(node: IAudioNode): void;
-    private getAudioNode(context);
+    private getConnectedAudioNode(context);
     protected disconnectCurrentAudioNode(): void;
     protected cancelPendingAndRemoveCompleted(): void;
     flush(): void;

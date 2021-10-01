@@ -327,6 +327,7 @@ export default abstract class APLRenderer<Options = {
     private onPointerLeave;
     private sendMousePointerEvent;
     private sendTouchPointerEvent;
+    private canPassLocalKeyDown;
     private handleKeyDown;
     private handleKeyUp;
     /**
@@ -340,6 +341,9 @@ export default abstract class APLRenderer<Options = {
     private renderComponents();
     private removeRenderingComponents();
     private focusTopLeft();
-    private recoverFocusOnEnter(id, code);
+    private passKeyDownToCore;
+    private passKeyUpToCore;
     private passWindowEventsToCore;
+    private shouldPassWindowEventToCore(event, focusedComponentId);
+    private ensureComponentIsFocused(id, code);
 }
