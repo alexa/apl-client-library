@@ -69,6 +69,14 @@ public:
      */
     void onTelemetrySinkUpdated(APLClient::Telemetry::AplMetricsSinkInterfacePtr sink);
 
+    /**
+     * Get the reported APL version from Core
+     * @return the reported APL version from Core
+     */
+    std::string getAPLVersionReported() {
+        return apl::APLVersion::getDefaultReportedVersionString();
+    }
+
 private:
     AplConfigurationPtr m_aplConfiguration;
 };

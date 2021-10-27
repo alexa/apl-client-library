@@ -252,6 +252,12 @@ private:
     void handleConfigurationChange(const rapidjson::Value& message);
 
     /**
+     * Handles the update display state message from the view host and send to Core.
+     * @param message
+     */
+    void handleUpdateDisplayState(const rapidjson::Value& message);
+
+    /**
      * Handle an update message from the view host of the form:
      *
      *     { "id": COMPONENT_ID, "type": EventType(int), "value": Integer }
@@ -301,6 +307,18 @@ private:
      * @param payload
      */
     void setFocus(const rapidjson::Value& payload);
+
+    /**
+     * Handle the mediaLoaded message received from the viewhost
+     * @param payload
+     */
+    void mediaLoaded(const rapidjson::Value& payload);
+
+    /**
+     * Handle the mediaLoadFailed message received from the viewhost
+     * @param payload
+     */
+    void mediaLoadFailed(const rapidjson::Value& payload);
 
     /**
      * Handle the getFocusableAreas message received from the viewhost
@@ -553,6 +571,8 @@ private:
 
     /// Pointer to the active @c AplDocumentState to restore.
     AplDocumentStatePtr m_documentStateToRestore;
+
+    std::chrono::steady_clock::time_point m_renderingStart;    
 };
 
 using AplCoreConnectionManagerPtr = std::shared_ptr<AplCoreConnectionManager>;

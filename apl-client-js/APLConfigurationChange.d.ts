@@ -2,7 +2,7 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { DeviceMode, ScreenMode, IConfigurationChangeOptions } from "./@types/apl-html/lib/index";
+import { DeviceMode, IConfigurationChangeOptions, ScreenMode } from "./@types/apl-html/lib/index";
 /**
  * Create and manage a configuration change payload
  */

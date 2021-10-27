@@ -2,12 +2,13 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 import APLRenderer from '../APLRenderer';
+import { FontStyle } from '../enums/FontStyle';
+import { KeyboardType } from '../enums/KeyboardType';
+import { PropertyKey } from '../enums/PropertyKey';
 import { ActionableComponent } from './ActionableComponent';
 import { Component, FactoryFunction, IComponentProperties } from './Component';
-import { FontStyle } from '../enums/FontStyle';
-import { PropertyKey } from '../enums/PropertyKey';
-import { KeyboardType } from '../enums/KeyboardType';
 /**
  * @ignore
  */

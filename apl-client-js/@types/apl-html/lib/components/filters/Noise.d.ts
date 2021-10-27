@@ -13,6 +13,7 @@ export interface INoise extends IBaseFilter {
     kind?: NoiseFilterKind;
     useColor?: boolean;
     sigma?: number;
+    source: number;
 }
 /**
  * Type guard for INoise

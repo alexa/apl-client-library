@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ILogger } from '../../logging/ILogger';
 import { GraphicFilterType } from '../../enums/GraphicFilterType';
+import { ILogger } from '../../logging/ILogger';
 export interface IAVGFilterElement {
     filterId: string;
     filterElement: SVGFilterElement;

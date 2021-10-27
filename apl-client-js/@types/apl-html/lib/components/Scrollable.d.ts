@@ -4,8 +4,8 @@
  */
 import APLRenderer from '../APLRenderer';
 import { ScrollDirection } from '../enums/ScrollDirection';
-import { Component, FactoryFunction, IComponentProperties } from './Component';
 import { ActionableComponent } from './ActionableComponent';
+import { Component, FactoryFunction, IComponentProperties } from './Component';
 /**
  * @ignore
  */

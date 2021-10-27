@@ -13,11 +13,13 @@ export declare enum EventProperty {
     kEventPropertyDirection = 6,
     kEventPropertyExtension = 7,
     kEventPropertyExtensionURI = 8,
-    kEventPropertyHighlightMode = 9,
-    kEventPropertyMediaType = 10,
-    kEventPropertyName = 11,
-    kEventPropertyPosition = 12,
-    kEventPropertyReason = 13,
-    kEventPropertySource = 14,
-    kEventPropertyValue = 15
+    kEventPropertyExtensionResourceId = 9,
+    kEventPropertyFlags = 10,
+    kEventPropertyHighlightMode = 11,
+    kEventPropertyMediaType = 12,
+    kEventPropertyName = 13,
+    kEventPropertyPosition = 14,
+    kEventPropertyReason = 15,
+    kEventPropertySource = 16,
+    kEventPropertyValue = 17
 }

@@ -124,13 +124,13 @@ const handleMessage = (data) => {
     }
 };
 
-let socket = new WebsocketConnection(handleMessage);
-let client = new Client(socket);
+const socket = new WebsocketConnection(handleMessage);
+const client = new Client(socket);
 let rendererElement;
 let renderer;
 
-let load = () => {
-    for (const it of ['document', 'data', 'viewports', 'command', 'height', 'width', 'dpi', 'scaling']) {
+const load = () => {
+    for (const it of ['document', 'data', 'viewports', 'command', 'height', 'width', 'dpi', 'scaling', 'mode', 'docTheme']) {
         if (localStorage.getItem(it)) {
             document.getElementById(it).value = localStorage.getItem(it);
         }
@@ -138,7 +138,7 @@ let load = () => {
     document.getElementsByClassName('tab')[0].click();
 };
 
-let handleResourceRequest = (source) => {
+const handleResourceRequest = (source) => {
     console.log('retrieving resource', source);
     fetch(source).then((response) => {
         if (!response.ok) {
@@ -159,11 +159,13 @@ let handleResourceRequest = (source) => {
     })
 };
 
-let resetViewhost = () => {
+const resetViewhost = () => {
     console.log('resetViewhost');
     const height = parseInt(document.getElementById('height').value);
     const width = parseInt(document.getElementById('width').value);
     const dpi = parseInt(document.getElementById('dpi').value);
+    const mode = document.getElementById('mode').value;
+    const theme = document.getElementById('docTheme').value;
     const environment = {
         agentName: 'APLClientSandbox',
         agentVersion: '1.0',
@@ -183,23 +185,18 @@ let resetViewhost = () => {
         dpi
     };
 
-    const supportedExtensions=[];
-    if(document.getElementById("bacstackExtensions").checked){
-        supportedExtensions.push('aplext:backstack:10');
-    }
-    if(document.getElementById("audioPlayerExtensions").checked){
-        supportedExtensions.push('aplext:audioplayer:10');
-    }
-    if(document.getElementById("musicAlarmsExtensions").checked){
-        supportedExtensions.push('aplext:musicalarm:10');
-    }
+    const extensions = document.getElementsByClassName('extension');
+    const supportedExtensions =
+        Array.from(extensions)
+            .filter((ext) => ext.checked)
+            .map((ext) => ext.getAttribute('data-extension-uri'))
     supportedExtensions.push('aplext:e2eencryption:10');
 
     const options = {
         view: rendererElement,
-        theme: 'dark',
+        theme,
         viewport,
-        mode: 'TV',
+        mode,
         environment,
         client,
         supportedExtensions,
@@ -260,7 +257,7 @@ function waitForFirstMeaningfulPaint(delayMs, tries) {
     }
 }
 
-let renderDocument = () => {
+const renderDocument = () => {
     const doc = document.getElementById('document').value;
     const data = document.getElementById('data').value;
     const viewports = document.getElementById('viewports').value;
@@ -268,6 +265,8 @@ let renderDocument = () => {
     const width = parseInt(document.getElementById('width').value);
     const dpi = parseInt(document.getElementById('dpi').value);
     const scaling = parseFloat(document.getElementById('scaling').value);
+    const mode = document.getElementById('mode').value;
+    const theme = document.getElementById('docTheme').value;
     rendererElement = document.getElementById('renderer');
 
     applyScale();
@@ -280,6 +279,8 @@ let renderDocument = () => {
     localStorage.setItem('width', width);
     localStorage.setItem('dpi', dpi);
     localStorage.setItem('scaling', scaling);
+    localStorage.setItem('mode', mode);
+    localStorage.setItem('docTheme', theme);
 
     socket.send({
         type: 'renderDocument',
@@ -289,7 +290,7 @@ let renderDocument = () => {
     });
 };
 
-let resizingIgnored = (width, height) => {
+const resizingIgnored = (width, height) => {
     const options = renderer.options;
     if (width === options.viewport.height && height === options.viewport.width) {
         // if dimensions flip, treat as rotation
@@ -299,14 +300,14 @@ let resizingIgnored = (width, height) => {
     }
 }
 
-let applyScale = () => {
+const applyScale = () => {
     const scaling = parseFloat(document.getElementById('scaling').value);
     const rendererWindow = document.getElementById('rendererWindow')
     rendererWindow.style.transform = `scale(${scaling})`;
     rendererWindow.style.transformOrigin = '0 0';
 }
 
-let rotate = () => {
+const rotate = () => {
     const newHeight = parseInt(document.getElementById('width').value);
     const newWidth = parseInt(document.getElementById('height').value);
 
@@ -321,7 +322,7 @@ let rotate = () => {
     }
 }
 
-let configChange = (id, type ='string') => {
+const configChange = (id, type ='string') => {
     // If we don't have a renderer, then there are no changes to apply
     if (!renderer) {
         return;
@@ -347,7 +348,18 @@ let configChange = (id, type ='string') => {
     renderer.onConfigurationChange(configChange);
 }
 
-let executeCommand = () => {
+const displayStateChange = (value) => {
+    // If we don't have a renderer, then there are no changes to apply
+    if (!renderer) {
+        return;
+    }
+
+    renderer.onDisplayStateChange({
+        displayState: Number(value)
+    });
+}
+
+const executeCommand = () => {
     const command = document.getElementById('command').value;
     localStorage.setItem('command', command);
     socket.send({
@@ -356,7 +368,7 @@ let executeCommand = () => {
     })
 };
 
-let switchTab = (evt, tabName) => {
+const switchTab = (evt, tabName) => {
     const content = document.getElementsByClassName('content');
     const tabs = document.getElementsByClassName('tab');
     for (const c of content) {

@@ -37,6 +37,7 @@ std::shared_ptr<AplClientBridge> AplClientBridge::create() {
     client->m_client->onTelemetrySinkUpdated(sink);
     client->m_aplClientRenderer = client->m_client->createRenderer("");
     client->loadExtensions();
+    Logger::info("AplClientBridge::create", "MaxSupportedAPLVersion:", client->m_client->getAPLVersionReported());
     return client;
 }
 

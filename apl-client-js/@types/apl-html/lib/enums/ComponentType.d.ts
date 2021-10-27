@@ -6,14 +6,15 @@
 export declare enum ComponentType {
     kComponentTypeContainer = 0,
     kComponentTypeEditText = 1,
-    kComponentTypeFrame = 2,
-    kComponentTypeGridSequence = 3,
-    kComponentTypeImage = 4,
-    kComponentTypePager = 5,
-    kComponentTypeScrollView = 6,
-    kComponentTypeSequence = 7,
-    kComponentTypeText = 8,
-    kComponentTypeTouchWrapper = 9,
-    kComponentTypeVectorGraphic = 10,
-    kComponentTypeVideo = 11
+    kComponentTypeExtension = 2,
+    kComponentTypeFrame = 3,
+    kComponentTypeGridSequence = 4,
+    kComponentTypeImage = 5,
+    kComponentTypePager = 6,
+    kComponentTypeScrollView = 7,
+    kComponentTypeSequence = 8,
+    kComponentTypeText = 9,
+    kComponentTypeTouchWrapper = 10,
+    kComponentTypeVectorGraphic = 11,
+    kComponentTypeVideo = 12
 }

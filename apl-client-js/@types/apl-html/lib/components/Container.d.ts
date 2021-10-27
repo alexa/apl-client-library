@@ -2,8 +2,8 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { Component, FactoryFunction } from './Component';
 import APLRenderer from '../APLRenderer';
+import { Component, FactoryFunction } from './Component';
 /**
  * @ignore
  */

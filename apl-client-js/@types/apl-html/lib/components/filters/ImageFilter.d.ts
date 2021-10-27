@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Filter } from '../../utils/FilterUtils';
 import { FilterType } from '../../enums/FilterType';
+import { Filter } from '../../utils/FilterUtils';
 /**
  * @ignore
  */
@@ -38,6 +38,8 @@ export declare class ImageFilter {
      * ImageFilter Constructor
      * @param filters filters get from kPropertyFilters
      * @param imageSrcArray image urls get from kPropertySource
+     * @param svgDefsElement svg element
+     * @param svgUseElement svg use element
      */
     constructor(filters: Filter[], imageSrcArray: string[], svgDefsElement: SVGElement, svgUseElement: SVGUseElement);
     private applyFilters();

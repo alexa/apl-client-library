@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FontStyle } from '../enums/FontStyle';
 import { ElementTypes } from '../components/helpers/StylesApplier';
+import { FontStyle } from '../enums/FontStyle';
 /**
  * Adjust exports to only export used interfaces
  */

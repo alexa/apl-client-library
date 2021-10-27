@@ -4,8 +4,8 @@
  */
 
 import { Filter } from '../../utils/FilterUtils';
-import { IGradient } from '../Image';
-import { IImageFilterElement, IBaseFilter } from './ImageFilter';
+import { IGradient } from '../../utils/ImageUtils';
+import { IBaseFilter, IImageFilterElement } from './ImageFilter';
 /**
  * @ignore
  */

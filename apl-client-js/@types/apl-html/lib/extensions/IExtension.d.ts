@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { IExtensionEventCallbackResult } from './IExtensionEventCallbackResult';
-import { LiveMap } from './LiveMap';
 import { LiveArray } from './LiveArray';
+import { LiveMap } from './LiveMap';
 export interface ILiveDataDefinition {
     name: string;
     data: LiveMap | LiveArray;

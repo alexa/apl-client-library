@@ -23,5 +23,7 @@ declare namespace APL {
         public getAPLVersion(): string;
         public getExtensionRequests(): Set<string>;
         public getExtensionSettings(uri: string): object;
+        public getParameterAt(index: number): string;
+        public getParameterCount(): number;
     }
 }

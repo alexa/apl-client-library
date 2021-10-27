@@ -53,9 +53,12 @@ declare namespace APL {
         public processDataSourceUpdate(payload: string, type: string): boolean;
         public handleDisplayMetrics(metrics: APL.DisplayMetric[]): void;
         public configurationChange(configurationChange: APL.ConfigurationChange, metrics?: APL.Metrics, scalingOptions?: any): void;
+        public updateDisplayState(displayState: any): void;
         public setFocus(direction: number, origin: APL.Rect, targetId: string): void;
         public getFocusableAreas(): Promise<Map<string, APL.Rect>>;
         public getFocused(): Promise<string>;
         public reInflate(): void;
+        public mediaLoaded(source: string): void;
+        public mediaLoadFailed(source: string, errorCode: number, error: string): void;
     }
 }

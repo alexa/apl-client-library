@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { AudioPlayerWrapper } from './AudioPlayerWrapper';
 import { Component } from './components/Component';
 import { MeasureMode } from './components/text/MeasureMode';
-import { AnimationQuality } from './enums/AnimationQuality';
 import { IVideoFactory } from './components/video/IVideoFactory';
-import { AudioPlayerWrapper } from './AudioPlayerWrapper';
-import { AudioPlayerFactory } from './media/audio/AudioPlayer';
-import { ILogger } from './logging/ILogger';
+import { AnimationQuality } from './enums/AnimationQuality';
+import { DisplayState } from './enums/DisplayState';
 import { IExtensionManager } from './extensions/IExtensionManager';
+import { ILogger } from './logging/ILogger';
+import { AudioPlayerFactory } from './media/audio/AudioPlayer';
 /**
  * Device viewport mode
  */
@@ -24,7 +25,7 @@ export declare type ViewportShape = 'ROUND' | 'RECTANGLE';
  */
 export declare type ScreenMode = 'normal' | 'high-contrast';
 /**
- * Physical charcteristics of the viewport
+ * Physical characteristics of the viewport
  */
 export interface IViewportCharacteristics {
     /** Width in pixels */
@@ -74,6 +75,9 @@ export interface IConfigurationChangeOptions {
     /** Indicates if a screen reader has been enabled for the user. */
     screenReader?: boolean;
 }
+export interface IDisplayStateOptions {
+    displayState: DisplayState;
+}
 /**
  * Developer tool options can be used to inject additional data into the DOM
  *
@@ -85,6 +89,7 @@ export interface IDeveloperToolOptions {
     mappingKey: string;
     /** Keys to export as data- attributes in the DOM */
     writeKeys: string[];
+    includeComponentId?: boolean;
 }
 /**
  * Event coming from APL.
@@ -102,6 +107,11 @@ export interface ISendEvent {
 export interface IDataSourceFetchRequest {
     type: string;
     payload: any;
+}
+export interface IMediaRequest {
+    source: string;
+    errorCode?: number;
+    error?: string;
 }
 export interface IExtensionEvent {
     uri: string;
@@ -127,7 +137,7 @@ export interface IAsyncKeyboardEvent extends KeyboardEvent {
  * Options when creating a new APLRenderer
  */
 export interface IAPLOptions {
-    /** Contains all the information on environment suport and options */
+    /** Contains all the information on environment support and options */
     environment: IEnvironment;
     /** APL theme. Usually 'light' or 'dark' */
     theme: string;
@@ -160,9 +170,9 @@ export interface IAPLOptions {
     /** Callback for ignoring resize config change */
     onResizingIgnored?: (ignoredWidth: number, ignoredHeight: number) => void;
     /**
-     * Callback when a AVG source needs to be retreived by the consumer
+     * Callback when a AVG source needs to be retrieved by the consumer
      * If this is not provided, this viewhost will use the fetch API to
-     * retreive graphic content from sources.
+     * retrieve graphic content from sources.
      */
     onRequestGraphic?: (source: string) => Promise<string | undefined>;
     /**
@@ -201,6 +211,7 @@ export default abstract class APLRenderer<Options = {
     /** Document set flag for allowing config change driven resizing */
     protected supportsResizing: boolean;
     private configChangeThrottle;
+    protected handleUpdateDisplayState: (displayState: DisplayState) => void;
     private isEdge;
     readonly options: Options;
     audioPlayer: AudioPlayerWrapper;
@@ -227,6 +238,11 @@ export default abstract class APLRenderer<Options = {
      * @param configurationChangeOptions The configuration change options to provide to core.
      */
     onConfigurationChange(configurationChangeOptions: IConfigurationChangeOptions): void;
+    /**
+     * Process Display State Change.
+     * @param displayStateOptions The display state change options to provide to core.
+     */
+    onDisplayStateChange(displayStateOptions: IDisplayStateOptions): void;
     getComponentCount(): number;
     private setBackground(docTheme);
     /**

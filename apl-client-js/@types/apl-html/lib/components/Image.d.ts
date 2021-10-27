@@ -2,29 +2,18 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+import APLRenderer from '../APLRenderer';
 import { ImageAlign } from '../enums/ImageAlign';
 import { ImageScale } from '../enums/ImageScale';
 import { PropertyKey } from '../enums/PropertyKey';
-import { GradientType } from '../enums/GradientType';
-import { Component, FactoryFunction, IComponentProperties } from './Component';
-import 'image-scale';
-import APLRenderer from '../APLRenderer';
-import { ILogger } from '../logging/ILogger';
 import { Filter } from '../utils/FilterUtils';
-/**
- * @ignore
- */
-export interface IGradient {
-    angle: number;
-    colorRange: number[];
-    inputRange: number[];
-    type: GradientType;
-}
+import { IGradient } from '../utils/ImageUtils';
+import { Component, FactoryFunction, IComponentProperties } from './Component';
 /**
  * @ignore
  */
 export interface IImageProperties extends IComponentProperties {
-    [PropertyKey.kPropertySource]: string;
+    [PropertyKey.kPropertySource]: string | string[];
     [PropertyKey.kPropertyAlign]: ImageAlign;
     [PropertyKey.kPropertyBorderRadius]: number;
     [PropertyKey.kPropertyBorderWidth]: number;
@@ -38,51 +27,44 @@ export interface IImageProperties extends IComponentProperties {
  * @ignore
  */
 export declare class Image extends Component<IImageProperties> {
-    private imgPlaceHolder;
-    private $imgPlaceHolder;
-    private imageOverlay;
-    private $imageOverlay;
-    private originalImageElement;
-    private $originalImageElement;
+    private uuid;
+    private imageSourcesArray;
+    private imageProperties;
     private canvasElement;
-    private imageElement;
-    private svgDefsElement;
-    private svgUseElement;
-    private svg;
-    private $svg;
-    private hasFiltersInCanvas;
-    private setSvgImageHrefTimeout;
-    private isShadowHolderAdded;
+    private svgElement;
+    private imageSVGElement;
+    private imageOverlay;
+    private imageView;
+    private imageViewProperties;
+    private imageOverlayProperties;
+    private svgImageElementProperties;
     constructor(renderer: APLRenderer, component: APL.Component, factory: FactoryFunction, parent?: Component);
+    init(): void;
     protected boundsUpdated(): void;
-    private initSvgElement;
-    private setBorderRadius;
+    protected onPropertiesUpdated(): void;
     protected applyCssShadow: (shadowParams: string) => void;
-    private setBorderColor;
-    private setBorderWidth;
+    private hasSourceChanged();
+    private getSourceArrayFromProperty;
+    private draw;
+    private fetchSource;
+    private renderImage();
+    private insertIntoDOM({ element, properties });
+    private prepareImageView();
+    private prepareImageOverlay();
     private setFilters;
+    private setBorderRadius;
     private setOverlayColor;
     private setOverlayGradient;
-    private setSourceAndFilter;
-    private getImageSource;
-    private setSvgImageHref;
-    private applyShadowEffectWhenScaled;
-    private hasShadowPropertyDefined;
-    /**
-     * Check filters.
-     * If there is any filter to be implemented in canvas, set hasFiltersInCanvas to true.
-     */
-    private checkFilters;
-    private addSVGFilters(filters, imageSourceArray);
-    /**
-     * Apply filters one by one based on their order.
-     * Skip blur if blur is implemented in CSS.
-     */
-    private applyFiltersToSvgImageHref;
-    static getCssGradient(gradient: IGradient, logger: ILogger): string;
-    static getCssPureColorGradient(color: string): string;
-    private setImageScale();
-    private getImageScale();
-    private setImageHolderAlignment();
-    private setImageAndSvgAlignment();
+    private setImageScale;
+    private setImageAlignment;
+    borderRadius: number;
+    borderColor: string;
+    borderWidth: number;
+    overlayColor: string;
+    overlayGradient: string;
+    readonly hasNoiseFilter: boolean;
+    imageScale: ImageScale;
+    imageAlignment: ImageAlign;
+    imageFilters: Filter[];
+    readonly canvasRenderingContext: CanvasRenderingContext2D;
 }

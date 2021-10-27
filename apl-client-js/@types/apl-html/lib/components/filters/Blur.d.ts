@@ -4,7 +4,7 @@
  */
 
 import { Filter } from '../../utils/FilterUtils';
-import { IImageFilterElement, IBaseFilter } from './ImageFilter';
+import { IBaseFilter, IImageFilterElement } from './ImageFilter';
 /**
  * @ignore
  */

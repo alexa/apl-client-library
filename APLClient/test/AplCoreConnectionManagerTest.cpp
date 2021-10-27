@@ -159,6 +159,11 @@ static const std::string DOCUMENT =
     "       {"
     "           \"type\": \"Reinflate\""
     "       }"
+    "   ],"
+    "   \"onDisplayStateChange\": ["
+    "       {"
+    "           \"type\": \"Reinflate\""
+    "       }"
     "   ]"
     "}";
 
@@ -534,7 +539,7 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
     // When onUpdateTick is called
     // Then message contain dirty component information will be send out.
     const std::string messageType = "\"type\":\"dirty\"";
-    const std::string dirtyPayload = "\"text\":{\"text\":\"Hi\",\"spans\":[]}}";
+    const std::string dirtyPayload = "\"text\":{\"text\":\"Hi\",\"spans\":[]}";
     EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(messageType, dirtyPayload))).Times(1);
     m_aplCoreConnectionManager->onUpdateTick();
 }
@@ -647,8 +652,7 @@ TEST_F(AplCoreConnectionManagerTest, HandleGraphicUpdateSuccess) {
         "\"width_actual\":100.0},"
         "\"children\":[]},"
         "\"dirty\":[]},"
-        "\"mediaBounds\":[-25.0,-25.0,100.0,100.0]"
-        "}";
+        "\"mediaBounds\":[-25.0,-25.0,100.0,100.0]";
     EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(messageType, dirtyPayload))).Times(1);
     m_aplCoreConnectionManager->onUpdateTick();
 }
@@ -701,29 +705,6 @@ TEST_F(AplCoreConnectionManagerTest, HandleEnsureLayoutSuccess) {
         "    \"payload\":"
         "    {"
         "      \"id\":\"COMP1\""
-        "    }"
-        "  } ";
-    m_aplCoreConnectionManager->handleMessage(payload);
-}
-
-/**
- * Tests HandleMessage function with scrollToRectInComponent type.
- */
-TEST_F(AplCoreConnectionManagerTest, HandleScrollToRectInComponentSuccess) {
-    SetupMocksForDocumentRender();
-    BuildDocument(DOCUMENT, DATA, VIEWPORT);
-
-    const std::string payload =
-        "  {"
-        "    \"type\":\"scrollToRectInComponent\","
-        "    \"payload\":"
-        "    {"
-        "      \"id\":\"COMP1\","
-        "      \"x\" : 0,"
-        "      \"y\" : 200,"
-        "      \"width\" : 1000,"
-        "      \"height\" : 500,"
-        "      \"align\" : 1"
         "    }"
         "  } ";
     m_aplCoreConnectionManager->handleMessage(payload);

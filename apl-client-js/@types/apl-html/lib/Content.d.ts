@@ -75,4 +75,13 @@ export declare class Content {
      * @param key
      */
     getAPLSettings(key: string): any;
+    /**
+     * get the parameter through index.
+     * @param index
+     */
+    getParameterAt(index: number): string;
+    /**
+     * get the total customized parameter needed for APL.
+     */
+    getParameterCount(): number;
 }

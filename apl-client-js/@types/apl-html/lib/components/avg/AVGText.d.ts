@@ -2,10 +2,9 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-
 import { GraphicPropertyKey } from '../../enums/GraphicPropertyKey';
-import { AVG } from './AVG';
 import { ILogger } from '../../logging/ILogger';
+import { AVG } from './AVG';
 export interface AVGTextArgs {
     graphic: APL.GraphicElement;
     parent: Element;

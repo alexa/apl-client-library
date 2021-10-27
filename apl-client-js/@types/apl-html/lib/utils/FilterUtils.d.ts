@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FilterType } from '../enums/FilterType';
-import { IColor } from '../components/filters/Color';
-import { IBlur } from '../components/filters/Blur';
-import { INoise } from '../components/filters/Noise';
-import { IGradientFilter } from '../components/filters/Gradient';
 import { IBlend } from '../components/filters/Blend';
+import { IBlur } from '../components/filters/Blur';
+import { IColor } from '../components/filters/Color';
+import { IGradientFilter } from '../components/filters/Gradient';
 import { IGrayscale } from '../components/filters/Grayscale';
+import { INoise } from '../components/filters/Noise';
 import { ISaturate } from '../components/filters/Saturate';
+import { FilterType } from '../enums/FilterType';
+import { ILogger } from '../logging/ILogger';
 /**
  * @ignore
  */
@@ -45,3 +46,15 @@ export declare const generateSVGFeImage: (sourceImageId: string, filterElement: 
  * @returns boolean, if true, ignore this filter stage and continue.
  */
 export declare const isIndexOutOfBound: (index: number, imageArrayLength: number) => boolean;
+export interface SVGImageFiltersApplierArgs {
+    uuid: string;
+    svgElement: SVGElement;
+    imageElement: SVGElement;
+    filters: Filter[];
+    imageSources: string[];
+    logger?: ILogger;
+}
+export interface SVGImageFiltersApplier {
+    applyFiltersToSVGImage: () => void;
+}
+export declare function createSVGImageFiltersApplier(args: SVGImageFiltersApplierArgs): SVGImageFiltersApplier;

@@ -31,7 +31,7 @@ static const char VERSION_KEY[] = "version";
 static const char VISUAL_CONTEXT_KEY[] = "componentsVisibleOnScreen";
 static const char DATASOURCE_CONTEXT_KEY[] = "dataSources";
 /// The value used in ProvideState.
-static const char VERSION_VALUE[] = "AplRenderer-1.7";
+static const char CLIENT_VERSION_PREFIX[] = "AplClientLibrary-";
 
 // Key used in messaging
 static const char SEQNO_KEY[] = "seqno";
@@ -98,6 +98,7 @@ static const char MEDIA_STATE_KEY[] = "mediaState";
 static const char FROM_EVENT_KEY[] = "fromEvent";
 static const char TRACK_INDEX_KEY[] = "trackIndex";
 static const char TRACK_COUNT_KEY[] = "trackCount";
+static const char TRACK_STATE_KEY[] = "trackState";
 static const char CURRENT_TIME_KEY[] = "currentTime";
 static const char DURATION_KEY[] = "duration";
 static const char PAUSED_KEY[] = "paused";
@@ -150,6 +151,7 @@ AplCoreConnectionManager::AplCoreConnectionManager(AplConfigurationPtr config) :
     m_extensionManager = std::make_shared<AplCoreExtensionManager>();
     m_messageHandlers.emplace("build", [this](const rapidjson::Value& payload) { handleBuild(payload); });
     m_messageHandlers.emplace("configurationChange",[this](const rapidjson::Value& payload) { handleConfigurationChange(payload); });
+    m_messageHandlers.emplace("updateDisplayState", [this](const rapidjson::Value& payload) { handleUpdateDisplayState(payload); });
     m_messageHandlers.emplace("update", [this](const rapidjson::Value& payload) { handleUpdate(payload); });
     m_messageHandlers.emplace("updateMedia", [this](const rapidjson::Value& payload) { handleMediaUpdate(payload); });
     m_messageHandlers.emplace("updateGraphic", [this](const rapidjson::Value& payload) { handleGraphicUpdate(payload); });
@@ -166,6 +168,8 @@ AplCoreConnectionManager::AplCoreConnectionManager(AplConfigurationPtr config) :
     m_messageHandlers.emplace("reInflate", [this](const rapidjson::Value& payload) { handleReInflate(payload); });
     m_messageHandlers.emplace("reHierarchy", [this](const rapidjson::Value& payload) { handleReHierarchy(payload); });
     m_messageHandlers.emplace("extension", [this](const rapidjson::Value& payload) { handleExtensionMessage(payload); });
+    m_messageHandlers.emplace("mediaLoaded", [this](const rapidjson::Value& payload) { mediaLoaded(payload); });
+    m_messageHandlers.emplace("mediaLoadFailed", [this](const rapidjson::Value& payload) { mediaLoadFailed(payload); });
 }
 
 void AplCoreConnectionManager::setContent(const apl::ContentPtr content, const std::string& token) {
@@ -363,6 +367,30 @@ void AplCoreConnectionManager::handleConfigurationChange(const rapidjson::Value&
     m_Root->configurationChange(configChange);
 }
 
+void AplCoreConnectionManager::handleUpdateDisplayState(const rapidjson::Value& displayState) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "handleUpdateDisplayStateFailed", "Root context is missing");
+        return;
+    }
+
+    /// Display State Mapping
+    std::map<int, apl::DisplayState> displayStateMapping = {
+        {0, apl::DisplayState::kDisplayStateHidden},
+        {1, apl::DisplayState::kDisplayStateBackground},
+        {2, apl::DisplayState::kDisplayStateForeground}
+    };
+
+    int state = displayState.GetInt();
+
+    if (displayStateMapping.find(state) == displayStateMapping.end()) {
+        aplOptions->logMessage(LogLevel::ERROR, "handleUpdateDisplayStateFailed", "Valid state not found");
+        return;
+    } else {
+        m_Root->updateDisplayState(displayStateMapping[state]);
+    }
+}
+
 void AplCoreConnectionManager::executeCommands(const std::string& command, const std::string& token) {
     auto aplOptions = m_aplConfiguration->getAplOptions();
     if (!m_Root) {
@@ -534,7 +562,7 @@ void AplCoreConnectionManager::provideState(unsigned int stateRequestToken) {
     state.AddMember(TOKEN_KEY, m_aplToken, allocator);
 
     // Add version info
-    state.AddMember(VERSION_KEY, VERSION_VALUE, allocator);
+    state.AddMember(VERSION_KEY, CLIENT_VERSION_PREFIX + apl::APLVersion::getDefaultReportedVersionString(), allocator);
 
     // Add visual context info
     state.AddMember(VISUAL_CONTEXT_KEY, getVisualContext(allocator), allocator);
@@ -647,6 +675,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                      .localTimeAdjustment(aplOptions->getTimezoneOffset().count())
                      .enforceAPLVersion(apl::APLVersion::kAPLVersionIgnore)
                      .sequenceChildCache(5)
+                     .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureManageMediaRequests)
                      .set(apl::RootProperty::kDefaultIdleTimeout, -1);
 
         // Data Sources
@@ -909,7 +938,8 @@ void AplCoreConnectionManager::handleMediaUpdate(const rapidjson::Value& update)
     auto fromEvent = update[FROM_EVENT_KEY].GetBool();
 
     if (!state.HasMember(TRACK_INDEX_KEY) || !state.HasMember(TRACK_COUNT_KEY) || !state.HasMember(CURRENT_TIME_KEY) ||
-        !state.HasMember(DURATION_KEY) || !state.HasMember(PAUSED_KEY) || !state.HasMember(ENDED_KEY)) {
+        !state.HasMember(DURATION_KEY) || !state.HasMember(PAUSED_KEY) || !state.HasMember(ENDED_KEY) ||
+        !state.HasMember(TRACK_STATE_KEY)) {
         aplOptions->logMessage(
             LogLevel::ERROR, "handleMediaUpdateFailed", "Can't update media state. MediaStatus structure is wrong");
         sendError("Can't update media state.");
@@ -921,9 +951,12 @@ void AplCoreConnectionManager::handleMediaUpdate(const rapidjson::Value& update)
     const int trackCount = getOptionalInt(state, TRACK_COUNT_KEY, 0);
     const int currentTime = getOptionalInt(state, CURRENT_TIME_KEY, 0);
     const int duration = getOptionalInt(state, DURATION_KEY, 0);
+    const auto trackState = static_cast<apl::TrackState>(state[TRACK_STATE_KEY].GetInt());
 
-    const apl::MediaState mediaState(
+    apl::MediaState mediaState(
         trackIndex, trackCount, currentTime, duration, state[PAUSED_KEY].GetBool(), state[ENDED_KEY].GetBool());
+
+    mediaState.withTrackState(trackState);
     component->updateMediaState(mediaState, fromEvent);
 }
 
@@ -1098,6 +1131,30 @@ void AplCoreConnectionManager::setFocus(const rapidjson::Value& payload) {
     auto origin = apl::Rect(top, left, width, height);
     auto targetId = payload["targetId"].GetString();
     m_Root->setFocus(static_cast<apl::FocusDirection>(direction), origin, targetId);
+}
+
+void AplCoreConnectionManager::mediaLoaded(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "AplCoreConnectionManager:mediaLoaded", "Root context is null");
+        return;
+    }
+    auto source = payload["source"].GetString();
+    m_Root->mediaLoaded(source);
+}
+
+void AplCoreConnectionManager::mediaLoadFailed(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "AplCoreConnectionManager::mediaLoadFailed", "Root context is null");
+        return;
+    }
+    auto source = payload["source"].GetString();
+    auto errorCode = payload["errorCode"].GetInt();
+    auto error = payload["error"].GetString();
+    m_Root->mediaLoadFailed(source, errorCode, error);
 }
 
 void AplCoreConnectionManager::handleUpdateCursorPosition(const rapidjson::Value& payload) {

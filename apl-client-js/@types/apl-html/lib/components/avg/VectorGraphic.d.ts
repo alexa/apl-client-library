@@ -6,8 +6,8 @@
 import APLRenderer from '../../APLRenderer';
 import { PropertyKey } from '../../enums/PropertyKey';
 import { VectorGraphicScale } from '../../enums/VectorGraphicScale';
-import { Component, FactoryFunction, IComponentProperties } from '../Component';
 import { ActionableComponent } from '../ActionableComponent';
+import { Component, FactoryFunction, IComponentProperties } from '../Component';
 import { VectorGraphicElementUpdater } from './VectorGraphicElementUpdater';
 export interface IVectorGraphicProperties extends IComponentProperties {
     [PropertyKey.kPropertyGraphic]: APL.Graphic;

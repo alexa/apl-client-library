@@ -4,12 +4,12 @@
  */
 import EventEmitter = require("./../../../eventemitter3/index");
 import APLRenderer from '../APLRenderer';
-import { PropertyKey } from '../enums/PropertyKey';
-import { UpdateType } from '../enums/UpdateType';
-import { ILogger } from '../logging/ILogger';
 import { GradientSpreadMethod } from '../enums/GradientSpreadMethod';
 import { GradientUnits } from '../enums/GradientUnits';
 import { LayoutDirection } from '../enums/LayoutDirection';
+import { PropertyKey } from '../enums/PropertyKey';
+import { UpdateType } from '../enums/UpdateType';
+import { ILogger } from '../logging/ILogger';
 export declare const SVG_NS = "http://www.w3.org/2000/svg";
 export declare const uuidv4: any;
 export declare const IDENTITY_TRANSFORM = "matrix(1.000000,0.000000,0.000000,1.000000,0.000000,0.000000)";
