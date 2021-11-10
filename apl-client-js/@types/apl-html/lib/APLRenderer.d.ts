@@ -333,6 +333,14 @@ export default abstract class APLRenderer<Options = {
      * Destroy current rendering component from top.
      */
     destroyRenderingComponents(): void;
+    /**
+     * Tell Core media has loaded
+     */
+    mediaLoaded(source: string): void;
+    /**
+     * Tell Core media has failed to load
+     */
+    mediaLoadFailed(source: string, errorCode: number, error: string): void;
     private getScreenCoords;
     private getLeavingCoords;
     private getTransformScale;

@@ -1,5 +1,11 @@
 # Changelog for apl-client-library
 
+## [1.8.2]
+
+### Changed
+
+- Fixed scrolling issue with SpeakItem command when highlight mode set to line
+
 ## [1.8.0]
 
 This release adds support for version 1.8 of the APL specification. Please also see APL Core Library for changes: [apl-core-library CHANGELOG](https://github.com/alexa/apl-core-library/blob/master/CHANGELOG.md)
