@@ -368,6 +368,13 @@ const executeCommand = () => {
     })
 };
 
+const attentionStateChange = (value) => {
+    socket.send({
+        type: 'updateAttentionSystemState',
+        payload: value
+    });
+}
+
 const switchTab = (evt, tabName) => {
     const content = document.getElementsByClassName('content');
     const tabs = document.getElementsByClassName('tab');

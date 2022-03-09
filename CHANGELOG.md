@@ -1,4 +1,12 @@
 # Changelog for apl-client-library
+## [1.8.3]
+
+### Changed
+
+- Fix latency on renderer destruction
+- Fix video player does not reload while destroying elements
+- Fix audio node undefined error
+- Fix execute commands not handling callbacks correctly
 
 ## [1.8.2]
 

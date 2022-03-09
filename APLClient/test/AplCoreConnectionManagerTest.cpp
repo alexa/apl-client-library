@@ -516,10 +516,10 @@ TEST_F(AplCoreConnectionManagerTest, CheckDocumentTimeoutInSettings) {
     BuildDocument(DOCUMENT_WITH_IDLETIMEOUT, DATA, VIEWPORT);
 }
 
-TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
+TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsAsyncResolve) {
     SetupMocksForDocumentRender();
     EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, true)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, AplCommandExecutionEvent::RESOLVED, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
 
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
@@ -544,10 +544,43 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsSuccess) {
     m_aplCoreConnectionManager->onUpdateTick();
 }
 
+TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsAutoResolve) {
+    SetupMocksForDocumentRender();
+    EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, AplCommandExecutionEvent::RESOLVED, _)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
+
+    BuildDocument(DOCUMENT, DATA, VIEWPORT);
+
+    const std::string payload =
+            "{"
+            "  \"commands\": ["
+            "    {"
+            "      \"type\": \"Idle\","
+            "      \"sequencer\": \"custom_sequencer\""
+            "    }"
+            "  ]"
+            "}";
+    m_aplCoreConnectionManager->executeCommands(payload, "");
+}
+
+TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsParseFailed) {
+    SetupMocksForDocumentRender();
+    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, AplCommandExecutionEvent::FAILED, _)).Times(1);
+
+    BuildDocument(DOCUMENT, DATA, VIEWPORT);
+
+    const std::string payload =
+            "{"
+            "  \"command\": {}"
+            "}";
+    m_aplCoreConnectionManager->executeCommands(payload, "");
+}
+
 TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsInterrupt) {
     SetupMocksForDocumentRender();
     EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, false)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, AplCommandExecutionEvent::TERMINATED, _)).Times(1);
     EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
 
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
@@ -565,6 +598,26 @@ TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsInterrupt) {
         "}";
     m_aplCoreConnectionManager->executeCommands(payload, "");
     m_aplCoreConnectionManager->interruptCommandSequence();
+}
+
+TEST_F(AplCoreConnectionManagerTest, ExecuteCommandsFinishTermination) {
+    SetupMocksForDocumentRender();
+    EXPECT_CALL(*m_mockAplOptions, onActivityStarted(_, APL_COMMAND_EXECUTION)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onCommandExecutionComplete(_, AplCommandExecutionEvent::TERMINATED, _)).Times(1);
+    EXPECT_CALL(*m_mockAplOptions, onActivityEnded(_, APL_COMMAND_EXECUTION)).Times(2);
+
+    BuildDocument(DOCUMENT, DATA, VIEWPORT);
+
+    const std::string payload =
+            "{"
+            "  \"commands\": ["
+            "    {"
+            "      \"type\": \"Finish\","
+            "      \"delay\": \"3000\""
+            "    }"
+            "  ]"
+            "}";
+    m_aplCoreConnectionManager->executeCommands(payload, "");
 }
 
 /**
@@ -586,7 +639,6 @@ TEST_F(AplCoreConnectionManagerTest, HandleUpdateSuccess) {
         "}";
     m_aplCoreConnectionManager->handleMessage(payload);
 }
-
 
 /**
  * Tests HandleMessage function with updateMedia type.

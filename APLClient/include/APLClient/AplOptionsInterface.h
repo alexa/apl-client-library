@@ -20,6 +20,7 @@
 #include <chrono>
 #include <string>
 
+#include "AplCommandExecutionEvent.h"
 #include "AplRenderingEvent.h"
 #include "Extensions/AplCoreExtensionEventCallbackResultInterface.h"
 
@@ -91,10 +92,11 @@ public:
 
     /**
      * Command execution has completed
-     * @param token The APL token
-     * @param result Whether the command executed to completion successfully
+     * @param token The APL token.
+     * @param event The @c AplCommandExecutionEvent.
+     * @param message The message concerning the completion state.
      */
-    virtual void onCommandExecutionComplete(const std::string& token, bool result) = 0;
+    virtual void onCommandExecutionComplete(const std::string& token, AplCommandExecutionEvent event, const std::string& message) = 0;
 
     /**
      * Rendering the APL document has completed

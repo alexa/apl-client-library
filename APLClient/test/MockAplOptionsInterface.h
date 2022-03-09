@@ -28,7 +28,7 @@ public:
     MOCK_METHOD2(onActivityStarted, void(const std::string& token, const std::string& source));
     MOCK_METHOD2(onActivityEnded, void(const std::string& token, const std::string& source));
     MOCK_METHOD2(onSendEvent, void(const std::string& token, const std::string& event));
-    MOCK_METHOD2(onCommandExecutionComplete, void(const std::string& token, bool result));
+    MOCK_METHOD3(onCommandExecutionComplete, void(const std::string& token, AplCommandExecutionEvent event, const std::string& message));
     MOCK_METHOD3(onRenderDocumentComplete, void(const std::string& token, bool result, const std::string& error));
     MOCK_METHOD3(
         onVisualContextAvailable,

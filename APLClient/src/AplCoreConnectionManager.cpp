@@ -393,45 +393,61 @@ void AplCoreConnectionManager::handleUpdateDisplayState(const rapidjson::Value& 
 
 void AplCoreConnectionManager::executeCommands(const std::string& command, const std::string& token) {
     auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    auto commandFailedFunc = [this, token](const std::string& failureMessage) {
+        auto aplOptions = m_aplConfiguration->getAplOptions();
+        aplOptions->logMessage(LogLevel::ERROR, "executeCommandsFailed", failureMessage);
+        aplOptions->onCommandExecutionComplete(token, AplCommandExecutionEvent::FAILED, failureMessage);
+    };
+
     if (!m_Root) {
-        aplOptions->logMessage(LogLevel::ERROR, "executeCommandsFailed", "Root context is missing");
+        commandFailedFunc("Root context is missing");
         return;
     }
 
     std::shared_ptr<rapidjson::Document> document(new rapidjson::Document);
     if (document->Parse(command).HasParseError()) {
-        aplOptions->logMessage(LogLevel::ERROR, "executeCommandsFailed", "Parse commands failed");
+        commandFailedFunc("Parse commands failed");
         return;
     }
 
     auto it = document->FindMember("commands");
     if (it == document->MemberEnd() || it->value.GetType() != rapidjson::Type::kArrayType) {
-        aplOptions->logMessage(LogLevel::ERROR, "executeCommandsFailed", "Missing commands, or is not array");
+        commandFailedFunc("Missing commands, or is not array");
         return;
     }
 
     apl::Object object{it->value};
     auto action = m_Root->executeCommands(object, false);
     if (!action) {
-        aplOptions->logMessage(LogLevel::ERROR, "executeCommandsFailed", "Execute commands failed");
+        commandFailedFunc("APL Core could not process commands");
         return;
     }
 
     aplOptions->onActivityStarted(token, APL_COMMAND_EXECUTION);
 
-    action->then([this, document, token](const apl::ActionPtr& action) {
+    auto actionResolvedFunc = [this, document, token](const apl::ActionPtr&) {
         auto aplOptions = m_aplConfiguration->getAplOptions();
-        aplOptions->logMessage(LogLevel::DBG, "executeCommands", "Command sequence complete");
-        aplOptions->onCommandExecutionComplete(token, true);
+        aplOptions->logMessage(LogLevel::DBG, "executeCommandsResolved", "Command sequence completed");
+        aplOptions->onCommandExecutionComplete(token, AplCommandExecutionEvent::RESOLVED, "Command sequence completed");
         aplOptions->onActivityEnded(token, APL_COMMAND_EXECUTION);
-    });
+    };
 
-    action->addTerminateCallback([this, document, token](const apl::TimersPtr&) {
+    auto actionTerminatedFunc = [this, document, token](const apl::TimersPtr&) {
         auto aplOptions = m_aplConfiguration->getAplOptions();
-        aplOptions->logMessage(LogLevel::DBG, "executeCommandsFailed", "Command sequence failed");
-        aplOptions->onCommandExecutionComplete(token, false);
+        aplOptions->logMessage(LogLevel::DBG, "executeCommandsTerminated", "Command sequence terminated");
+        aplOptions->onCommandExecutionComplete(token, AplCommandExecutionEvent::TERMINATED, "Command sequence terminated");
         aplOptions->onActivityEnded(token, APL_COMMAND_EXECUTION);
-    });
+    };
+
+    if (action->isPending()) {
+        action->then(actionResolvedFunc);
+        action->addTerminateCallback(actionTerminatedFunc);
+    } else if(action->isResolved()) {
+        actionResolvedFunc(nullptr);
+    } else if (action->isTerminated()) {
+        actionTerminatedFunc(nullptr);
+    }
 }
 
 void AplCoreConnectionManager::onExtensionEvent(

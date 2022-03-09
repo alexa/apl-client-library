@@ -18,8 +18,7 @@ AplCoreGuiRenderer.cpp
 AplCoreMetrics.cpp
 AplCoreTextMeasurement.cpp
 AplCoreLocaleMethods.cpp
-AplClientRenderer.cpp
-)
+AplClientRenderer.cpp)
 
 if(NOT APLCORE_RAPIDJSON_INCLUDE_DIR)
     message(FATAL_ERROR "APLCORE_RAPIDJSON_INCLUDE_DIR is required to build APLClientLibrary")

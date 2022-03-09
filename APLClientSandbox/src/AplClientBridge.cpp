@@ -185,8 +185,8 @@ void AplClientBridge::onSendEvent(const std::string& token, const std::string& e
     Logger::info("AplClientBridge::onSendEvent", event);
 }
 
-void AplClientBridge::onCommandExecutionComplete(const std::string& token, bool result) {
-    Logger::info("AplClientBridge::onCommandExecutionComplete", "success:", result);
+void AplClientBridge::onCommandExecutionComplete(const std::string& token, APLClient::AplCommandExecutionEvent event, const std::string& message) {
+    Logger::info("AplClientBridge::onCommandExecutionComplete", "event:", APLClient::commandExecutionEventToString(event), ", message:", message);
 }
 
 void AplClientBridge::onRenderDocumentComplete(const std::string& token, bool result, const std::string& error) {
