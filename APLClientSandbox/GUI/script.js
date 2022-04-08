@@ -130,7 +130,7 @@ let rendererElement;
 let renderer;
 
 const load = () => {
-    for (const it of ['document', 'data', 'viewports', 'command', 'height', 'width', 'dpi', 'scaling', 'mode', 'docTheme']) {
+    for (const it of ['aplTemplate', 'aplDataModel', 'viewports', 'aplCommand', 'height', 'width', 'dpi', 'scaling', 'mode', 'docTheme']) {
         if (localStorage.getItem(it)) {
             document.getElementById(it).value = localStorage.getItem(it);
         }
@@ -200,7 +200,10 @@ const resetViewhost = () => {
         environment,
         client,
         supportedExtensions,
-        onResizingIgnored: resizingIgnored
+        onResizingIgnored: resizingIgnored,
+        developerToolOptions: {
+            includeComponentId: true
+        }
     };
 
     if (renderer) {
@@ -258,8 +261,8 @@ function waitForFirstMeaningfulPaint(delayMs, tries) {
 }
 
 const renderDocument = () => {
-    const doc = document.getElementById('document').value;
-    const data = document.getElementById('data').value;
+    const doc = document.getElementById('aplTemplate').value;
+    const data = document.getElementById('aplDataModel').value;
     const viewports = document.getElementById('viewports').value;
     const height = parseInt(document.getElementById('height').value);
     const width = parseInt(document.getElementById('width').value);
@@ -267,13 +270,13 @@ const renderDocument = () => {
     const scaling = parseFloat(document.getElementById('scaling').value);
     const mode = document.getElementById('mode').value;
     const theme = document.getElementById('docTheme').value;
-    rendererElement = document.getElementById('renderer');
+    rendererElement = document.getElementById('aplView');
 
     applyScale();
     performance.mark(RENDER_DOCUMENT_START);
 
-    localStorage.setItem('document', doc);
-    localStorage.setItem('data', data);
+    localStorage.setItem('aplTemplate', doc);
+    localStorage.setItem('aplDataModel', data);
     localStorage.setItem('viewports', viewports);
     localStorage.setItem('height', height);
     localStorage.setItem('width', width);
@@ -332,6 +335,14 @@ const configChange = (id, type ='string') => {
         case "number":
             newValue = document.getElementById(id).valueAsNumber;
             break;
+        case "boolean":
+            const value = document.getElementById(id).value;
+            newValue = value === "true" || value === "True";
+            break;
+        case "object":
+            const stringValue = document.getElementById(id).value;
+            newValue = JSON.parse(stringValue);
+            break;
         case "string":
         default:
             newValue = document.getElementById(id).value;
@@ -360,8 +371,8 @@ const displayStateChange = (value) => {
 }
 
 const executeCommand = () => {
-    const command = document.getElementById('command').value;
-    localStorage.setItem('command', command);
+    const command = document.getElementById('aplCommand').value;
+    localStorage.setItem('aplCommand', command);
     socket.send({
         type: 'executeCommands',
         command

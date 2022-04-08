@@ -22,6 +22,7 @@
 
 #include <apl/datasource/dynamicindexlistdatasourceprovider.h>
 #include <apl/datasource/dynamictokenlistdatasourceprovider.h>
+#include <apl/content/rootproperties.h>
 
 namespace APLClient {
 
@@ -65,6 +66,8 @@ static const char AGENTNAME_KEY[] = "agentName";
 static const char AGENTVERSION_KEY[] = "agentVersion";
 static const char ALLOWOPENURL_KEY[] = "allowOpenUrl";
 static const char DISALLOWVIDEO_KEY[] = "disallowVideo";
+static const char DISALLOWDIALOG_KEY[] = "disallowDialog";
+static const char DISALLOWEDITTEXT_KEY[] = "disallowEditText";
 static const char ANIMATIONQUALITY_KEY[] = "animationQuality";
 static const char SUPPORTED_EXTENSIONS[] = "supportedExtensions";
 static const char EXTENSION_MESSAGE_KEY[] = "extension";
@@ -76,6 +79,7 @@ static const char SCREENREADER_KEY[] = "screenReader";
 
 /// Document settings keys.
 static const char SUPPORTS_RESIZING_KEY[] = "supportsResizing";
+static const char ENVIRONMENT_VALUE_KEY[] = "environmentValues";
 
 /// The keys used in APL event execution.
 static const char ERROR_KEY[] = "error";
@@ -362,6 +366,17 @@ void AplCoreConnectionManager::handleConfigurationChange(const rapidjson::Value&
     // config change for screenReader
     if (configurationChange.HasMember(SCREENREADER_KEY) && configurationChange[SCREENREADER_KEY].IsBool()) {
         configChange = configChange.screenReader(configurationChange[SCREENREADER_KEY].GetBool());
+    }
+    // config change for disallowVideo
+    if (configurationChange.HasMember(DISALLOWVIDEO_KEY) && configurationChange[DISALLOWVIDEO_KEY].IsBool()) {
+        configChange = configChange.disallowVideo(configurationChange[DISALLOWVIDEO_KEY].GetBool());
+    }
+
+    // config change for environment value
+    if (configurationChange.HasMember(ENVIRONMENT_VALUE_KEY) && configurationChange[ENVIRONMENT_VALUE_KEY].IsObject()) {
+        for (rapidjson::Value::ConstMemberIterator iter = configurationChange[ENVIRONMENT_VALUE_KEY].MemberBegin(); iter != configurationChange[ENVIRONMENT_VALUE_KEY].MemberEnd(); ++iter){
+            configChange = configChange.environmentValue(iter->name.GetString(), iter->value);
+        }
     }
     updateConfigurationChange(configChange);
     m_Root->configurationChange(configChange);
@@ -677,6 +692,9 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         std::string agentVersion = getOptionalValue(message, AGENTVERSION_KEY, "1.0");
         bool allowOpenUrl = getOptionalBool(message, ALLOWOPENURL_KEY, false);
         bool disallowVideo = getOptionalBool(message, DISALLOWVIDEO_KEY, false);
+        bool disallowDialog = getOptionalBool(message, DISALLOWDIALOG_KEY, false);
+        bool disallowEditText = getOptionalBool(message, DISALLOWEDITTEXT_KEY, false);
+
         int animationQuality =
             getOptionalInt(message, ANIMATIONQUALITY_KEY, apl::RootConfig::AnimationQuality::kAnimationQualityNormal);
 
@@ -684,6 +702,9 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                      .agent(agentName, agentVersion)
                      .allowOpenUrl(allowOpenUrl)
                      .disallowVideo(disallowVideo)
+                     .set(apl::RootProperty::kDisallowVideo, disallowVideo)
+                     .set(apl::RootProperty::kDisallowEditText, disallowEditText)
+                     .set(apl::RootProperty::kDisallowDialog, disallowDialog)
                      .animationQuality(static_cast<apl::RootConfig::AnimationQuality>(animationQuality))
                      .measure(std::make_shared<AplCoreTextMeasurement>(shared_from_this(), m_aplConfiguration))
                      .localeMethods(std::make_shared<AplCoreLocaleMethods>(shared_from_this(), m_aplConfiguration))
@@ -710,6 +731,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         auto supportedExtensions = message[SUPPORTED_EXTENSIONS].GetArray();
         // Extensions requested by the content
         auto requestedExtensions = m_Content->getExtensionRequests();
+
         for (auto& ext : supportedExtensions) {
             auto uri = ext.GetString();
             // If the supported extension is both requested and available, register it with the config
@@ -965,9 +987,9 @@ void AplCoreConnectionManager::handleMediaUpdate(const rapidjson::Value& update)
     // numeric parameters are sometimes converted to null during stringification, set these to 0
     const int trackIndex = getOptionalInt(state, TRACK_INDEX_KEY, 0);
     const int trackCount = getOptionalInt(state, TRACK_COUNT_KEY, 0);
-    const int currentTime = getOptionalInt(state, CURRENT_TIME_KEY, 0);
-    const int duration = getOptionalInt(state, DURATION_KEY, 0);
-    const auto trackState = static_cast<apl::TrackState>(state[TRACK_STATE_KEY].GetInt());
+    const int currentTime = (int) getOptionalValue(state, CURRENT_TIME_KEY, 0);
+    const int duration = (int) getOptionalValue(state, DURATION_KEY, 0);
+    const apl::TrackState trackState = static_cast<apl::TrackState>(state[TRACK_STATE_KEY].GetInt());
 
     apl::MediaState mediaState(
         trackIndex, trackCount, currentTime, duration, state[PAUSED_KEY].GetBool(), state[ENDED_KEY].GetBool());

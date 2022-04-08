@@ -1,214 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>APL Client Sandbox</title>
     <script src="index.js"></script>
     <script src="script.js"></script>
-    <style>
-        .tabs {
-            border: 1px solid grey;
-            overflow: hidden;
-        }
-
-        .tabs button {
-            background-color: lightgray;
-            border: none;
-            border-right: 1px solid white;
-            cursor: pointer;
-            float: left;
-            outline: none;
-            padding: 20px 30px;
-        }
-
-        .tabs button.active {
-            background-color: gray;
-        }
-
-        .tabs button:hover {
-            background-color: darkgray;
-        }
-
-        .content {
-            border: 1px solid black;
-            border-top: none;
-            display: none;
-        }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 20px;
-        }
-
-        .switch input { 
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: .4s;
-            transition: .4s;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 13px;
-            width: 12px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            -webkit-transition: .4s;
-            transition: .4s;
-        }
-
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-
-        input:checked + .slider:before {
-            -webkit-transform: translateX(21px);
-            -ms-transform: translateX(21px);
-            transform: translateX(21px);
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body onload="load()">
-    <div>
-        <div class="tabs">
-            <button class="tab" onclick="switchTab(event, 'docTab')">Document</button>
-            <button class="tab" onclick="switchTab(event, 'dataTab')">Data</button>
-            <button class="tab" onclick="switchTab(event, 'viewportsTab')">Viewports</button>
-            <button class="tab" onclick="switchTab(event, 'commandTab')">Command</button>
-            <button class="tab" onclick="switchTab(event, 'optionsTab')">Options</button>
-        </div>
-        <div id="docTab" class="content">
-            <label for="document">Document</label><br><textarea id="document" style="height: 220px; width: 90%;">{}</textarea>
-        </div>
-        <div id="dataTab" class="content">
-            <label for="data">Data</label><br><textarea id="data" style="height: 220px; width: 90%;">{}</textarea>
-        </div>
-        <div id="viewportsTab" class="content">
-            <label for="viewports">Viewports</label><br><textarea id="viewports" style="height: 220px; width: 90%;">[
-                {
-                  "mode": "HUB",
-                  "shape": "RECTANGLE",
-                  "minWidth": 1024,
-                  "maxWidth": 1024,
-                  "minHeight": 600,
-                  "maxHeight": 600
-                },
-                {
-                  "mode": "HUB",
-                  "shape": "RECTANGLE",
-                  "minWidth": 1280,
-                  "maxWidth": 1280,
-                  "minHeight": 800,
-                  "maxHeight": 800
-                },
-                {
-                  "mode": "HUB",
-                  "shape": "RECTANGLE",
-                  "minWidth": 960,
-                  "maxWidth": 960,
-                  "minHeight": 480,
-                  "maxHeight": 480
-                },
-                {
-                  "mode": "HUB",
-                  "shape": "ROUND",
-                  "minWidth": 480,
-                  "maxWidth": 480,
-                  "minHeight": 480,
-                  "maxHeight": 480
-                },
-                {
-                  "mode": "TV",
-                  "shape": "RECTANGLE",
-                  "minWidth": 960,
-                  "maxWidth": 960,
-                  "minHeight": 540,
-                  "maxHeight": 540
-                },
-                {
-                  "mode": "TV",
-                  "shape": "RECTANGLE",
-                  "minWidth": 960,
-                  "maxWidth": 960,
-                  "minHeight": 200,
-                  "maxHeight": 200
-                },
-                {
-                  "mode": "TV",
-                  "shape": "RECTANGLE",
-                  "minWidth": 300,
-                  "maxWidth": 300,
-                  "minHeight": 540,
-                  "maxHeight": 540
-                }
-              ]
+<div>
+    <div class="tabs">
+        <button class="tab" onclick="switchTab(event, 'docTab')">Document</button>
+        <button class="tab" onclick="switchTab(event, 'dataTab')">Data</button>
+        <button class="tab" onclick="switchTab(event, 'viewportsTab')">Viewports</button>
+        <button class="tab" onclick="switchTab(event, 'commandTab')">Command</button>
+        <button class="tab" onclick="switchTab(event, 'optionsTab')">Options</button>
+    </div>
+    <div id="docTab" class="content">
+        <label for="aplTemplate">Document</label><br><textarea id="aplTemplate" style="height: 220px; width: 90%;">{}</textarea>
+    </div>
+    <div id="dataTab" class="content">
+        <label for="aplDataModel">Data</label><br><textarea id="aplDataModel" style="height: 220px; width: 90%;">{}</textarea>
+    </div>
+    <div id="viewportsTab" class="content">
+        <label for="viewports">Viewports</label><br><textarea id="viewports" style="height: 220px; width: 90%;">
+[
+    {
+        "mode": "HUB",
+        "shape": "RECTANGLE"
+    },
+    {
+        "mode": "HUB",
+        "shape": "RECTANGLE",
+        "minWidth": 1024,
+        "maxWidth": 1024,
+        "minHeight": 600,
+        "maxHeight": 600
+    },
+    {
+        "mode": "HUB",
+        "shape": "RECTANGLE",
+        "minWidth": 960,
+        "maxWidth": 960,
+        "minHeight": 480,
+        "maxHeight": 480
+    },
+    {
+        "mode": "HUB",
+        "shape": "ROUND",
+        "minWidth": 480,
+        "maxWidth": 480,
+        "minHeight": 480,
+        "maxHeight": 480
+    },
+    {
+        "mode": "TV",
+        "shape": "RECTANGLE",
+        "minWidth": 960,
+        "maxWidth": 960,
+        "minHeight": 540,
+        "maxHeight": 540
+    },
+    {
+        "mode": "TV",
+        "shape": "RECTANGLE",
+        "minWidth": 960,
+        "maxWidth": 960,
+        "minHeight": 200,
+        "maxHeight": 200
+    },
+    {
+        "mode": "TV",
+        "shape": "RECTANGLE",
+        "minWidth": 300,
+        "maxWidth": 300,
+        "minHeight": 540,
+        "maxHeight": 540
+    }
+]
             </textarea>
-        </div>
-        <div id="commandTab" class="content">
-            <label for="command">Command</label><br>
-            <textarea id="command" style="height: 220px; width: 90%;">{"commands": []}</textarea>
-        </div>
-        <div id="optionsTab" class="content">
-            <label for="width">Width</label>
-            <input type="number" id="width" value="1920" onchange="configChange('width', 'number')"/>
-            <br>
-            <label for="width">Height</label>
-            <input type="number" id="height" value="1080" onchange="configChange('height', 'number')"/>
-            <br>
-            <label for="dpi">DPI</label>
-            <input type="text" id="dpi" value="320"/>
-            <br>
-            <label for="scaling">Scaling</label>
-            <input type="text" id="scaling" value="0.5" onchange="applyScale()"/> (affects browser only)
-            <br>
-            <label for="docTheme">DocTheme</label>
-            <input type="text" id="docTheme" value="dark" onchange="configChange('docTheme')"/>
-            <br>
-            <label for="mode">Mode</label>
-            <input type="text" id="mode" value="TV" onchange="configChange('mode')"/>
-            <br>
-            <label for="fontScale">FontScale</label>
-            <input type="number" id="fontScale" value="1" step="0.01" onchange="configChange('fontScale', 'number')"/>
-            <br>
-            <label for="displayState">DisplayState</label>
-            <input type="text" id="displayState" value="foreground" onchange="displayStateChange('displayState')"/>
-        </div>
-        <span style= "font-size: 18px;">Bacstack Extension</span>
+    </div>
+    <div id="commandTab" class="content">
+        <label for="aplCommand">Command</label><br><textarea id="aplCommand" style="height: 220px; width: 90%;">
+{
+    "commands": []
+}
+</textarea>
+    </div>
+    <div id="optionsTab" class="content">
+        <label for="width">Width</label>
+        <input type="number" id="width" value="1024" onchange="configChange('width', 'number')"/>
+        <br>
+        <label for="width">Height</label>
+        <input type="number" id="height" value="600" onchange="configChange('height', 'number')"/>
+        <br>
+        <label for="dpi">DPI</label>
+        <input type="text" id="dpi" value="160"/>
+        <br>
+        <label for="scaling">Scaling</label>
+        <input type="text" id="scaling" value="1.0" onchange="applyScale()"/> (affects browser only)
+        <br>
+        <label for="docTheme">DocTheme</label>
+        <input type="text" id="docTheme" value="dark" onchange="configChange('docTheme')" />
+        <label for="environmentValues">EnvironmentValues</label>
+        <input type="text" id="environmentValues" value="" onchange="configChange('environmentValues', 'object')" />
+        <br>
+        <label for="mode">Mode</label>
+        <input type="text" id="mode" value="HUB" onchange="configChange('mode')"/>
+        <br>
+        <label for="fontScale">FontScale</label>
+        <input type="number" id="fontScale" value="1" step="0.01" onchange="configChange('fontScale', 'number')" />
+        <br>
+        <label for="displayState">DisplayState</label>
+        <select id="displayState" onchange="displayStateChange(this.value)">
+            <option value="0">Hidden</option>
+            <option value="1">Background</option>
+            <option value="2">Foreground</option>
+        </select>
+        <label for="disallowVideo">DisallowVideo</label>
+        <select id="disallowVideo" onchange="configChange('disallowVideo', 'boolean')">
+            <option value="true">True</option>
+            <option value="false">False</option>
+        </select>
+        <br>
+        <label for="attentionState">AttentionState</label>
+        <select id="attentionState" onchange="attentionStateChange(this.value)">
+            <option value="IDLE">IDLE</option>
+            <option value="LISTENING">LISTENING</option>
+            <option value="THINKING">THINKING</option>
+            <option value="SPEAKING">SPEAKING</option>
+        </select>
+    </div>
+    <div>
+        <span style="font-size: 18px;">Bacstack Extension</span>
         <label class="switch">
-          <input type="checkbox" id="bacstackExtensions">
-          <span class="slider"></span>
-        </label>
-        <span style= "font-size: 18px;">AudioPlayer Extension</span>
-        <label class="switch">
-            <input type="checkbox" id="audioPlayerExtensions">
+            <input type="checkbox" class="extension" data-extension-uri="aplext:backstack:10">
             <span class="slider"></span>
         </label>
-        <span style= "font-size: 18px;">MusicAlarms Extension</span>
+        <span style="font-size: 18px;">AudioPlayer Extension</span>
         <label class="switch">
-            <input type="checkbox" id="musicAlarmsExtensions">
+            <input type="checkbox" class="extension" data-extension-uri="aplext:audioplayer:10">
             <span class="slider"></span>
         </label>
-        <button value="render" onclick="renderDocument()">Render</button>
+        <span style="font-size: 18px;">MusicAlarms Extension</span>
+        <label class="switch">
+            <input type="checkbox" class="extension" data-extension-uri="aplext:musicalarm:10">
+            <span class="slider"></span>
+        </label>
+        <span style="font-size: 18px;">AttentionSystem Extension</span>
+        <label class="switch">
+            <input type="checkbox" class="extension" data-extension-uri="aplext:attentionsystem:10">
+            <span class="slider"></span>
+        </label>
+    </div>
+    <div>
+        <button id="aplLoadTemplate" value="render" onclick="renderDocument()">Render</button>
         <button value="execute" onclick="executeCommand()">Execute</button>
         <button value="rotate" onclick="rotate()">Rotate</button>
     </div>
-    <div id ="rendererWindow">
-        <div id="renderer" style="border:1px solid black;">
-        </div>
+</div>
+<div id ="rendererWindow">
+    <div id="aplView" style="border:1px solid black;">
     </div>
+</div>
 </body>
 </html>

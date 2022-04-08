@@ -1,18 +1,21 @@
 # Changelog for apl-client-library
-## [1.8.3]
+
+## [1.9.0]
+
+This release adds support for version 1.9 of the APL specification. Please also see APL Core Library for changes: [apl-core-library CHANGELOG](https://github.com/alexa/apl-core-library/blob/master/CHANGELOG.md)
+
+### Added
+
+- Image/VectorGraphics auth headers
+- Disallow flags for video, edit text, and dialog
+- Custom environment properties
 
 ### Changed
 
-- Fix latency on renderer destruction
-- Fix video player does not reload while destroying elements
-- Fix audio node undefined error
-- Fix execute commands not handling callbacks correctly
-
-## [1.8.2]
-
-### Changed
-
-- Fixed scrolling issue with SpeakItem command when highlight mode set to line
+- Bug fixes
+    - Audio player fix with AudioNode and AudioContext
+    - Pager highlight
+    - Video player release
 
 ## [1.8.0]
 
@@ -26,7 +29,7 @@ This release adds support for version 1.8 of the APL specification. Please also 
 
 ### Changed
 
-- Bug fixes
+- Images are now being retrieved through fetch API -- CORS is now enforced
 
 ## [1.7.0]
 

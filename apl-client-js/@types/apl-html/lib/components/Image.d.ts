@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -6,6 +6,7 @@ import APLRenderer from '../APLRenderer';
 import { ImageAlign } from '../enums/ImageAlign';
 import { ImageScale } from '../enums/ImageScale';
 import { PropertyKey } from '../enums/PropertyKey';
+import { IURLRequest } from '../media/IURLRequest';
 import { Filter } from '../utils/FilterUtils';
 import { IGradient } from '../utils/ImageUtils';
 import { Component, FactoryFunction, IComponentProperties } from './Component';
@@ -13,7 +14,7 @@ import { Component, FactoryFunction, IComponentProperties } from './Component';
  * @ignore
  */
 export interface IImageProperties extends IComponentProperties {
-    [PropertyKey.kPropertySource]: string | string[];
+    [PropertyKey.kPropertySource]: IURLRequest | string[];
     [PropertyKey.kPropertyAlign]: ImageAlign;
     [PropertyKey.kPropertyBorderRadius]: number;
     [PropertyKey.kPropertyBorderWidth]: number;
@@ -28,7 +29,7 @@ export interface IImageProperties extends IComponentProperties {
  */
 export declare class Image extends Component<IImageProperties> {
     private uuid;
-    private imageSourcesArray;
+    private imageSources;
     private imageProperties;
     private canvasElement;
     private svgElement;

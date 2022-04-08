@@ -20,8 +20,7 @@
 #include "APLClientSandbox/Message.h"
 
 #include "APLClientSandbox/AplClientBridge.h"
-#include <APLClientSandbox/AplMetricsStreamSink.h>
-#include "APLClient/Extensions/E2EEncryption/AplE2EEncryptionExtension.h"
+#include "APLClientSandbox/AplMetricsStreamSink.h"
 
 #include <chrono>
 
@@ -48,9 +47,15 @@ void AplClientBridge::loadExtensions() {
     m_backstackExtension = std::make_shared<Backstack::AplBackstackExtension>(shared_from_this());
     m_audioPlayerExtension = std::make_shared<AudioPlayer::AplAudioPlayerExtension>(shared_from_this());
     m_audioPlayerAlarmsExtension = std::make_shared<AudioPlayer::AplAudioPlayerAlarmsExtension>(shared_from_this());
-    m_encryptionExtension = std::make_shared<E2EEncryption::AplE2EEncryptionExtension>();
 
-    addExtensions({m_backstackExtension, m_audioPlayerExtension, m_audioPlayerAlarmsExtension, m_encryptionExtension});
+    m_attentionSystemExtension = std::make_shared<AttentionSystem::AplAttentionSystemExtension>();
+
+    addExtensions({
+        m_backstackExtension,
+        m_audioPlayerExtension,
+        m_audioPlayerAlarmsExtension,
+        m_attentionSystemExtension
+    });
 }
 
 void AplClientBridge::addExtensions(std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions) {
@@ -345,4 +350,23 @@ void AplClientBridge::onAudioPlayerAlarmDismiss() {
 
 void AplClientBridge::onAudioPlayerAlarmSnooze() {
     Logger::info("AplClientBridge::onAudioPlayerAlarmSnooze", "AlarmSnooze");
+}
+
+const std::map<std::string, APLClient::Extensions::AttentionSystem::AttentionState> attentionStateMapping = {
+    {"IDLE", APLClient::Extensions::AttentionSystem::AttentionState::IDLE},
+    {"LISTENING", APLClient::Extensions::AttentionSystem::AttentionState::LISTENING},
+    {"THINKING", APLClient::Extensions::AttentionSystem::AttentionState::THINKING},
+    {"SPEAKING", APLClient::Extensions::AttentionSystem::AttentionState::SPEAKING}
+};
+
+void AplClientBridge::updateAttentionSystemState(const std::string& state) {
+    Logger::info("AplClientBridge::updateAttentionSystemState", "updateAttentionSystemState", state);
+    if (m_attentionSystemExtension) {
+        if (attentionStateMapping.find(state) == attentionStateMapping.end()) {
+            Logger::info("AplClientBridge::updateAttentionSystemState", "Invalid Attention System State: ", state);
+            return;
+        } else {
+            m_attentionSystemExtension->updateAttentionSystemState(attentionStateMapping.at(state));
+        }
+    }
 }

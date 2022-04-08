@@ -1,4 +1,4 @@
-/*
+/*!
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,10 @@ export declare abstract class AudioPlayer {
     protected setCurrentAudioNode(node: IAudioNode): void;
     private getConnectedAudioNode(context);
     protected disconnectCurrentAudioNode(): void;
+    /**
+     * Releases AudioContext. Called when destroying AudioPlayer.
+     */
+    abstract releaseAudioContext(): void;
     protected cancelPendingAndRemoveCompleted(): void;
     flush(): void;
 }

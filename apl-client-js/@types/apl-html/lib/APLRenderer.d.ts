@@ -39,18 +39,28 @@ export interface IViewportCharacteristics {
     /** Dots per inch */
     dpi: number;
 }
+export interface IEnvironmentBase {
+    /** Indicates if video is allowed.  */
+    disallowVideo?: boolean;
+    /** `true` if speech interaction is not supported. Defaults to `false` */
+    disallowDialog?: boolean;
+    /** `true` if edit text is not supported. Defaults to `false` */
+    disallowEditText?: boolean;
+    /** Custom environment property values. */
+    environmentValues?: {
+        [key: string]: any;
+    };
+}
 /**
  * Environment and support options
  */
-export interface IEnvironment {
+export interface IEnvironment extends IEnvironmentBase {
     /** Agent Name */
     agentName: string;
     /** Agent Version */
     agentVersion: string;
     /** `true` if OpenURL command is supported. Defaults to `false` */
     allowOpenUrl?: boolean;
-    /** `true` if video is not supported. Defaults to `false` */
-    disallowVideo?: boolean;
     /** Level of animation quality. Defaults to `AnimationQuality.kAnimationQualityNormal` */
     animationQuality?: AnimationQuality;
 }
@@ -59,7 +69,7 @@ export interface IEnvironment {
  *
  * Dynamic changes to the renderer viewport or envrionment.
  */
-export interface IConfigurationChangeOptions {
+export interface IConfigurationChangeOptions extends IEnvironmentBase {
     /** Viewport Width in pixels */
     width?: number;
     /** Viewport Height in pixels */
@@ -110,6 +120,7 @@ export interface IDataSourceFetchRequest {
 }
 export interface IMediaRequest {
     source: string;
+    headers?: Headers;
     errorCode?: number;
     error?: string;
 }
@@ -174,7 +185,7 @@ export interface IAPLOptions {
      * If this is not provided, this viewhost will use the fetch API to
      * retrieve graphic content from sources.
      */
-    onRequestGraphic?: (source: string) => Promise<string | undefined>;
+    onRequestGraphic?: (url: string, headers?: Headers) => Promise<string | undefined>;
     /**
      * Callback to open a URL. Return `false` if this call fails
      */
@@ -191,8 +202,7 @@ export interface IAPLOptions {
 /**
  * The main renderer. Create a new one with `const renderer = APLRenderer.create(content);`
  */
-export default abstract class APLRenderer<Options = {
-}> {
+export default abstract class APLRenderer<Options = any> {
     private mOptions;
     private static mappingKeyExpression;
     private static mousePointerId;
@@ -210,7 +220,7 @@ export default abstract class APLRenderer<Options = {
     protected handleConfigurationChange: (configurationChangeOption: IConfigurationChangeOptions) => void;
     /** Document set flag for allowing config change driven resizing */
     protected supportsResizing: boolean;
-    private configChangeThrottle;
+    private configurationChangeThrottle;
     protected handleUpdateDisplayState: (displayState: DisplayState) => void;
     private isEdge;
     readonly options: Options;
@@ -370,4 +380,5 @@ export default abstract class APLRenderer<Options = {
     private passWindowEventsToCore;
     private shouldPassWindowEventToCore(event, focusedComponentId);
     private ensureComponentIsFocused(id, code);
+    private destroyAudioPlayer();
 }

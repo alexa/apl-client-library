@@ -108,6 +108,10 @@ void GUIManager::onMessage(const std::string& payload) {
         const std::string payload = doc["payload"].GetString();
 
         m_client->provideResource(url, payload);
+    } else if (type == "updateAttentionSystemState") {
+        const std::string payload = doc["payload"].GetString();
+
+        m_client->updateAttentionSystemState(payload);
     } else {
         Logger::error("GUIManager::onMessage", "Unknown message type", type);
     }

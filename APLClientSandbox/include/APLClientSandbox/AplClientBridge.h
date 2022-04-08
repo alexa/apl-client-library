@@ -16,13 +16,13 @@
 #ifndef APLCLIENTSANDBOX_INCLUDE_APLCLIENTBINDING_H_
 #define APLCLIENTSANDBOX_INCLUDE_APLCLIENTBINDING_H_
 
-#include <APLClient/AplClientBinding.h>
+#include "APLClient/AplClientBinding.h"
 #include "APLClient/Extensions/AplCoreExtensionInterface.h"
-#include <APLClient/Extensions/AudioPlayer/AplAudioPlayerExtension.h>
-#include <APLClient/Extensions/AudioPlayer/AplAudioPlayerAlarmsExtension.h>
-#include <APLClient/Extensions/Backstack/AplBackstackExtension.h>
-#include "APLClient/Extensions/E2EEncryption/AplE2EEncryptionExtension.h"
-#include <APLClient/AplOptionsInterface.h>
+#include "APLClient/Extensions/AudioPlayer/AplAudioPlayerExtension.h"
+#include "APLClient/Extensions/AudioPlayer/AplAudioPlayerAlarmsExtension.h"
+#include "APLClient/Extensions/Backstack/AplBackstackExtension.h"
+#include "APLClient/Extensions/AttentionSystem/AplAttentionSystemExtension.h"
+#include "APLClient/AplOptionsInterface.h"
 #include <mutex>
 #include <string>
 #include "APLClientSandbox/Executor.h"
@@ -101,6 +101,11 @@ public:
     void onAudioPlayerAlarmDismiss() override;
     void onAudioPlayerAlarmSnooze() override;
     /// @}
+
+    /**
+     * Passes the Attention State message onto the @c AplAttentionSystemExtension
+     */
+    void updateAttentionSystemState(const std::string& state);
 
     bool handleBack();
 
@@ -201,14 +206,14 @@ private:
     /// Pointer to the @c AplBackstackExtension
     std::shared_ptr<APLClient::Extensions::Backstack::AplBackstackExtension> m_backstackExtension;
 
-    /// Pointer to the @c E2EEncryption
-    std::shared_ptr<APLClient::Extensions::E2EEncryption::AplE2EEncryptionExtension> m_encryptionExtension;
-
     /// Pointer to the @c AplAudioPlayerExtension
     std::shared_ptr<APLClient::Extensions::AudioPlayer::AplAudioPlayerExtension> m_audioPlayerExtension;
 
     /// Pointer to the @c AplAudioPlayerAlarmsExtension
     std::shared_ptr<APLClient::Extensions::AudioPlayer::AplAudioPlayerAlarmsExtension> m_audioPlayerAlarmsExtension;
+
+    /// Pointer to the @c AplAttentionSystemExtension
+    std::shared_ptr<APLClient::Extensions::AttentionSystem::AplAttentionSystemExtension> m_attentionSystemExtension;
 
     /// audioPlayer offset at current session
     int audioPlayerOffset;

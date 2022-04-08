@@ -7,6 +7,7 @@ import APLRenderer from '../APLRenderer';
 import { GradientType } from '../enums/GradientType';
 import { ImageScale } from '../enums/ImageScale';
 import { ILogger } from '../logging/ILogger';
+import { IURLRequest } from '../media/IURLRequest';
 import { Filter } from './FilterUtils';
 export interface IGradient {
     angle: number;
@@ -21,7 +22,7 @@ export interface ImageDimensions {
     height: number;
 }
 export interface ImageScalerArgs {
-    imageSourceUrl: string;
+    imageSource: IURLRequest;
     renderer: APLRenderer;
     scalingOption?: ImageScale;
     imageDimensions: ImageDimensions;

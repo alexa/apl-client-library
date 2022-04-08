@@ -10,4 +10,5 @@ export declare class DefaultAudioPlayer extends AudioPlayer {
     protected contextProvider: IAudioContextProvider;
     constructor(eventListener: IAudioEventListener);
     play(id: string): void;
+    releaseAudioContext(): void;
 }

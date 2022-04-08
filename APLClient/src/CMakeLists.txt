@@ -4,10 +4,10 @@ add_library(APLClient SHARED
 AplClientBinding.cpp
 AplConfiguration.cpp
 Extensions/AplCoreExtensionManager.cpp
+Extensions/AttentionSystem/AplAttentionSystemExtension.cpp
 Extensions/AudioPlayer/AplAudioPlayerExtension.cpp
 Extensions/AudioPlayer/AplAudioPlayerAlarmsExtension.cpp
 Extensions/Backstack/AplBackstackExtension.cpp
-Extensions/E2EEncryption/AplE2EEncryptionExtension.cpp
 Telemetry/AplMetricsRecorder.cpp
 Telemetry/AplMetricsRecorderInterface.cpp
 Telemetry/DownloadMetricsEmitter.cpp

@@ -15,13 +15,14 @@ export interface IVectorGraphicProperties extends IComponentProperties {
     [PropertyKey.kPropertyScale]: VectorGraphicScale;
     [PropertyKey.kPropertySource]: string;
 }
+export declare function extractVectorGraphicFromResponse(response: Response): Promise<string>;
 /**
  * @ignore
  */
 export declare class VectorGraphic extends ActionableComponent<IVectorGraphicProperties> {
     static readonly SVG_NS: string;
     private graphic;
-    private svg;
+    private readonly svg;
     private vectorGraphicUpdater;
     constructor(renderer: APLRenderer, component: APL.Component, factory: FactoryFunction, vectorGraphicUpdater: VectorGraphicElementUpdater, parent?: Component);
     setProperties(props: IVectorGraphicProperties): Promise<void>;

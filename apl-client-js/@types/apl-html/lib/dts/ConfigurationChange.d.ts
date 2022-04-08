@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@ declare namespace APL {
         public fontScale(scale: number): ConfigurationChange;
         public screenMode(screenMode: string): ConfigurationChange;
         public screenReader(enabled: boolean): ConfigurationChange;
+        public disallowVideo(disallowVideo: boolean): ConfigurationChange;
+        public environmentValue(key: string, value: object): ConfigurationChange;
         public mergeConfigurationChange(other: ConfigurationChange): void;
     }
 }
