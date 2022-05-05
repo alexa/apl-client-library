@@ -33,6 +33,7 @@ export declare class PlaybackManager {
     previous(): IMediaResource;
     setCurrent(index: number): void;
     hasNext(): boolean;
+    hasPrevious(): boolean;
     repeat(): boolean;
     private addToPlaylist(index, track);
     private reset();

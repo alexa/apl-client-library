@@ -2,6 +2,7 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+import { APLContext } from '../APLContext';
 import { GraphicElementData } from './APLGraphicElement';
 export interface GraphicData {
     root: GraphicElementData;
@@ -13,6 +14,7 @@ export interface GraphicData {
     dirty: GraphicElementData[];
 }
 export declare class APLGraphic implements APL.Graphic {
+    private context;
     private root;
     private valid;
     private intrinsicWidth;
@@ -20,7 +22,7 @@ export declare class APLGraphic implements APL.Graphic {
     private viewportWidth;
     private viewportHeight;
     private dirty;
-    constructor(data: GraphicData);
+    constructor(context: APLContext, data: GraphicData);
     private addToDirty(dirty);
     getRoot(): APL.GraphicElement;
     isValid(): boolean;

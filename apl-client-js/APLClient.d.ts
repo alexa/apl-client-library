@@ -6,6 +6,7 @@
 import { ExtensionPayload } from './ExtensionMessageHandler';
 export interface RenderingOptionsPayload {
     legacyKaraoke: boolean;
+    documentAplVersion: string;
 }
 export interface IHierarchyPayload {
     hierarchy: IComponentPayload;
@@ -84,6 +85,10 @@ export interface FocusedPayload {
 export interface SupportsResizingPayload {
     supportsResizing: boolean;
 }
+export interface ContextPayload {
+    messageId: string;
+    result: string;
+}
 export interface PayloadTypeMap {
     'renderingOptions': RenderingOptionsPayload;
     'measure': MeasurePayload;
@@ -103,6 +108,8 @@ export interface PayloadTypeMap {
     'localeMethod': LocaleMethodPayload;
     'getFocusableAreas': FocusableAreasPayload;
     'getFocused': FocusedPayload;
+    'getVisualContext': ContextPayload;
+    'getDataSourceContext': ContextPayload;
     'getDisplayedChildCount': DisplayedChildCountPayload;
     'getDisplayedChildId': DisplayedChildIdPayload;
     'supportsResizing': SupportsResizingPayload;
@@ -142,6 +149,8 @@ export interface IAPLMessageListener {
     onLocaleMethod?(message: Message<'localeMethod'>): void;
     onGetFocusableAreas?(message: Message<'getFocusableAreas'>): void;
     onGetFocused?(message: Message<'getFocused'>): void;
+    onGetVisualContext?(message: Message<'getVisualContext'>): void;
+    onGetDataSourceContext?(message: Message<'getDataSourceContext'>): void;
     onGetDisplayedChildCount?(message: Message<'getDisplayedChildCount'>): void;
     onGetDisplayedChildId?(message: Message<'getDisplayedChildId'>): void;
     onSupportsResizing?(message: Message<'supportsResizing'>): void;

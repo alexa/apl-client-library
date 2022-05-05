@@ -26,8 +26,8 @@ declare namespace APL {
         public getTheme(): string;
         public getBackground(): APL.IBackground;
         public setBackground(background: APL.IBackground): void;
-        public getDataSourceContext(): string;
-        public getVisualContext(): string;
+        public getDataSourceContext(): Promise<string>;
+        public getVisualContext(): Promise<string>;
         public clearPending(): void;
         public isDirty(): boolean;
         public clearDirty(): void;

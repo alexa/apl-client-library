@@ -509,7 +509,11 @@ private:
 
     rapidjson::Value getVisualContext(rapidjson::Document::AllocatorType& allocator);
 
-    rapidjson::Value getDatasourceContext(rapidjson::Document::AllocatorType& allocator);
+    rapidjson::Value getDataSourceContext(rapidjson::Document::AllocatorType& allocator);
+
+    void getVisualContext(const rapidjson::Value& payload);
+
+    void getDataSourceContext(const rapidjson::Value& payload);
 
     AplConfigurationPtr m_aplConfiguration;
 

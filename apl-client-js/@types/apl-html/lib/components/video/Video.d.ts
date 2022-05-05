@@ -21,12 +21,14 @@ export declare class Video extends AbstractVideoComponent {
     controlMedia(operation: CommandControlMedia, optionalValue: number): Promise<void>;
     play(waitForFinish?: boolean): Promise<any>;
     pause(): Promise<any>;
+    end(): Promise<any>;
     seek(offset: number): Promise<any>;
     rewind(): Promise<any>;
     previous(): Promise<any>;
     next(): Promise<any>;
     setTrack(trackIndex: number): Promise<any>;
     protected setAudioTrack(audioTrack: AudioTrack): void;
+    protected setMuted(muted: boolean): void;
     protected setSource(source: IMediaSource | IMediaSource[]): Promise<any>;
     protected setTrackCurrentTime(trackCurrentTime: number): void;
     protected setTrackIndex(trackIndex: number): void;

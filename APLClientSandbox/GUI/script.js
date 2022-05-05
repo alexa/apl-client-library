@@ -203,7 +203,8 @@ const resetViewhost = () => {
         onResizingIgnored: resizingIgnored,
         developerToolOptions: {
             includeComponentId: true
-        }
+        },
+        scrollCommandDuration: parseInt(document.getElementById('scrollDuration').value)
     };
 
     if (renderer) {
@@ -258,6 +259,14 @@ function waitForFirstMeaningfulPaint(delayMs, tries) {
     } else {
         console.error('Could not detect meaningful paint.');
     }
+}
+
+async function getVisualContext() {
+    console.log(await renderer.context.getVisualContext());
+}
+
+async function getDataSourceContext() {
+    console.log(await renderer.context.getDataSourceContext());
 }
 
 const renderDocument = () => {

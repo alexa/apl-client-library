@@ -789,6 +789,29 @@ TEST_F(AplCoreConnectionManagerTest, HandleKeyboardSuccess) {
 }
 
 /**
+ * Tests HandleMessage function with scrollToRectInComponent type.
+ */
+TEST_F(AplCoreConnectionManagerTest, HandleScrollToRectInComponentSuccess) {
+    SetupMocksForDocumentRender();
+    BuildDocument(DOCUMENT, DATA, VIEWPORT);
+
+    const std::string payload =
+        "  {"
+        "    \"type\":\"scrollToRectInComponent\","
+        "    \"payload\":"
+        "    {"
+        "      \"id\":\"COMP1\","
+        "      \"x\" : 0,"
+        "      \"y\" : 200,"
+        "      \"width\" : 1000,"
+        "      \"height\" : 500,"
+        "      \"align\" : 1"
+        "    }"
+        "  } ";
+    m_aplCoreConnectionManager->handleMessage(payload);
+}
+
+/**
  * Tests HandleMessage function with updateCursorPosition type.
  */
 TEST_F(AplCoreConnectionManagerTest, HandleUpdateCursorPositionSuccess) {

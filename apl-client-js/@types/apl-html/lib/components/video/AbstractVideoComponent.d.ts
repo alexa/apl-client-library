@@ -40,12 +40,14 @@ export declare abstract class AbstractVideoComponent extends Component<IVideoPro
     abstract setTrack(trackIndex: number): any;
     protected abstract setScale(scale: VideoScale): any;
     protected abstract setAudioTrack(audioTrack: AudioTrack): any;
+    protected abstract setMuted(muted: boolean): any;
     protected abstract setSource(source: IMediaSource | IMediaSource[]): any;
     protected abstract setTrackCurrentTime(trackCurrentTime: number): any;
     protected abstract setTrackIndex(trackIndex: number): any;
     protected setTrackPaused(isPaused: boolean): void;
     private setScaleFromProp;
     private setAudioTrackFromProp;
+    private setMutedFromProp;
     private setSourceFromProp;
     private setTrackCurrentTimeFromProp;
     private setTrackIndexFromProp;

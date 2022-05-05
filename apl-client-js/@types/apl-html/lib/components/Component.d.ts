@@ -159,4 +159,14 @@ export declare abstract class Component<PropsType = IGenericPropType> extends Ev
     protected applyCssShadow: (shadowParams: string) => void;
     protected takeFocus(): Promise<void>;
     protected readonly lang: string;
+    /**
+     * Enable clipping if version is <= 1.5 or if component is part the legacy-clipping set.
+     * Never enable clipping for if component is part of the no-clipping set.
+     *
+     */
+    private checkComponentTypeAndEnableClipping();
+    /**
+     * Enable clipping
+     */
+    protected enableClipping(): void;
 }

@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export declare function toActualSize(value: number): number;
-export declare function toFillOrStroke(value: any): any;
+import { APLContext } from './../APLContext';
+export declare function toActualSize(context: APLContext, value: number): number;
+export declare function toFillOrStroke(context: APLContext, value: any): any;
 export interface GraphicElementData {
     id: number;
     children: GraphicElementData[];
@@ -20,7 +21,7 @@ export declare class APLGraphicElement implements APL.GraphicElement {
     private props;
     private children;
     private dirtyProperties;
-    constructor(data: GraphicElementData);
+    constructor(context: APLContext, data: GraphicElementData);
     getId(): number;
     getChildCount(): number;
     getChildren(): APLGraphicElement[];

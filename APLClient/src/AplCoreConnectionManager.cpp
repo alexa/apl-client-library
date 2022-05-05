@@ -71,6 +71,7 @@ static const char DISALLOWEDITTEXT_KEY[] = "disallowEditText";
 static const char ANIMATIONQUALITY_KEY[] = "animationQuality";
 static const char SUPPORTED_EXTENSIONS[] = "supportedExtensions";
 static const char EXTENSION_MESSAGE_KEY[] = "extension";
+static const char SCROLL_COMMAND_DURATION_KEY[] = "scrollCommandDuration";
 
 /// The keys used in OS accessibility settings.
 static const char FONTSCALE_KEY[] = "fontScale";
@@ -107,6 +108,7 @@ static const char CURRENT_TIME_KEY[] = "currentTime";
 static const char DURATION_KEY[] = "duration";
 static const char PAUSED_KEY[] = "paused";
 static const char ENDED_KEY[] = "ended";
+static const char MUTED_KEY[] = "muted";
 
 /// Activity tracking sources
 static const std::string APL_COMMAND_EXECUTION{"APLCommandExecution"};
@@ -114,6 +116,7 @@ static const std::string APL_SCREEN_LOCK{"APLScreenLock"};
 static const char RENDERING_OPTIONS_KEY[] = "renderingOptions";
 
 static const char LEGACY_KARAOKE_KEY[] = "legacyKaraoke";
+static const char DOCUMENT_APL_VERSION_KEY[] = "documentAplVersion";
 
 /// HandlePointerEvent keys
 static const char POINTEREVENTTYPE_KEY[] = "pointerEventType";
@@ -165,6 +168,8 @@ AplCoreConnectionManager::AplCoreConnectionManager(AplConfigurationPtr config) :
     m_messageHandlers.emplace("handleKeyboard", [this](const rapidjson::Value& payload) { handleHandleKeyboard(payload); });
     m_messageHandlers.emplace("getFocusableAreas", [this](const rapidjson::Value& payload) { getFocusableAreas(payload); });
     m_messageHandlers.emplace("getFocused", [this](const rapidjson::Value& payload) { getFocused(payload); });
+    m_messageHandlers.emplace("getVisualContext", [this](const rapidjson::Value& payload) { getVisualContext(payload); });
+    m_messageHandlers.emplace("getDataSourceContext", [this](const rapidjson::Value& payload) { getDataSourceContext(payload); });
     m_messageHandlers.emplace("setFocus", [this](const rapidjson::Value& payload) { setFocus(payload); });
     m_messageHandlers.emplace("updateCursorPosition", [this](const rapidjson::Value& payload) { handleUpdateCursorPosition(payload); });
     m_messageHandlers.emplace("handlePointerEvent", [this](const rapidjson::Value& payload) { handleHandlePointerEvent(payload); });
@@ -599,7 +604,7 @@ void AplCoreConnectionManager::provideState(unsigned int stateRequestToken) {
     state.AddMember(VISUAL_CONTEXT_KEY, getVisualContext(allocator), allocator);
 
     // Add datasource context info
-    state.AddMember(DATASOURCE_CONTEXT_KEY, getDatasourceContext(allocator), allocator);
+    state.AddMember(DATASOURCE_CONTEXT_KEY, getDataSourceContext(allocator), allocator);
 
     state.Accept(writer);
     aplOptions->onVisualContextAvailable(m_aplToken, stateRequestToken, buffer.GetString());
@@ -626,7 +631,27 @@ rapidjson::Value AplCoreConnectionManager::getVisualContext(rapidjson::Document:
     return arr;
 }
 
-rapidjson::Value AplCoreConnectionManager::getDatasourceContext(rapidjson::Document::AllocatorType& allocator) {
+void AplCoreConnectionManager::getVisualContext(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "getVisualContextFailed", "Unable to get visual context");
+        return;
+    }
+    auto messageId = payload["messageId"].GetString();
+    auto message = AplCoreViewhostMessage("getVisualContext");
+    auto& alloc = message.alloc();
+    auto result = m_Root->serializeVisualContext(alloc);
+
+    rapidjson::Value outPayload(rapidjson::kObjectType);
+    rapidjson::Value value;
+    value.SetString(messageId, alloc);
+    outPayload.AddMember("messageId", value, alloc);
+    outPayload.AddMember("result", result, alloc);
+    message.setPayload(std::move(outPayload));
+    send(message);
+}
+
+rapidjson::Value AplCoreConnectionManager::getDataSourceContext(rapidjson::Document::AllocatorType& allocator) {
     auto aplOptions = m_aplConfiguration->getAplOptions();
     auto timer = m_aplConfiguration->getMetricsRecorder()->createTimer(
             Telemetry::AplMetricsRecorderInterface::CURRENT_DOCUMENT,
@@ -637,13 +662,33 @@ rapidjson::Value AplCoreConnectionManager::getDatasourceContext(rapidjson::Docum
     if (m_Root) {
         context = m_Root->serializeDataSourceContext(allocator);
     } else {
-        aplOptions->logMessage(LogLevel::ERROR, "getDatasourceContextFailed", "Unable to get datasource context");
+        aplOptions->logMessage(LogLevel::ERROR, "getDataSourceContextFailed", "Unable to get datasource context");
         rapidjson::Value emptyDataSource(rapidjson::kArrayType);
         // return empty datasource context
         context = emptyDataSource;
     }
     timer->stop();
     return context;
+}
+
+void AplCoreConnectionManager::getDataSourceContext(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "getDataSourceContextFailed", "Unable to get datasource context");
+        return;
+    }
+    auto messageId = payload["messageId"].GetString();
+    auto message = AplCoreViewhostMessage("getDataSourceContext");
+    auto& alloc = message.alloc();
+    auto result = m_Root->serializeDataSourceContext(alloc);
+
+    rapidjson::Value outPayload(rapidjson::kObjectType);
+    rapidjson::Value value;
+    value.SetString(messageId, alloc);
+    outPayload.AddMember("messageId", value, alloc);
+    outPayload.AddMember("result", result, alloc);
+    message.setPayload(std::move(outPayload));
+    send(message);
 }
 
 void AplCoreConnectionManager::interruptCommandSequence() {
@@ -694,7 +739,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         bool disallowVideo = getOptionalBool(message, DISALLOWVIDEO_KEY, false);
         bool disallowDialog = getOptionalBool(message, DISALLOWDIALOG_KEY, false);
         bool disallowEditText = getOptionalBool(message, DISALLOWEDITTEXT_KEY, false);
-
+        int scrollCommandDuration = getOptionalValue(message, SCROLL_COMMAND_DURATION_KEY, 1000);
         int animationQuality =
             getOptionalInt(message, ANIMATIONQUALITY_KEY, apl::RootConfig::AnimationQuality::kAnimationQualityNormal);
 
@@ -702,6 +747,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                      .agent(agentName, agentVersion)
                      .allowOpenUrl(allowOpenUrl)
                      .disallowVideo(disallowVideo)
+                     .set(apl::RootProperty::kScrollCommandDuration, scrollCommandDuration)
                      .set(apl::RootProperty::kDisallowVideo, disallowVideo)
                      .set(apl::RootProperty::kDisallowEditText, disallowEditText)
                      .set(apl::RootProperty::kDisallowDialog, disallowDialog)
@@ -748,6 +794,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
     auto renderingOptionsMsg = AplCoreViewhostMessage(RENDERING_OPTIONS_KEY);
     rapidjson::Value renderingOptions(rapidjson::kObjectType);
     renderingOptions.AddMember(LEGACY_KARAOKE_KEY, aplVersion == "1.0", renderingOptionsMsg.alloc());
+    renderingOptions.AddMember(DOCUMENT_APL_VERSION_KEY, aplVersion, renderingOptionsMsg.alloc());
     send(renderingOptionsMsg.setPayload(std::move(renderingOptions)));
 
     m_PendingEvents.clear();
@@ -977,7 +1024,7 @@ void AplCoreConnectionManager::handleMediaUpdate(const rapidjson::Value& update)
 
     if (!state.HasMember(TRACK_INDEX_KEY) || !state.HasMember(TRACK_COUNT_KEY) || !state.HasMember(CURRENT_TIME_KEY) ||
         !state.HasMember(DURATION_KEY) || !state.HasMember(PAUSED_KEY) || !state.HasMember(ENDED_KEY) ||
-        !state.HasMember(TRACK_STATE_KEY)) {
+        !state.HasMember(TRACK_STATE_KEY) || !state.HasMember(MUTED_KEY)) {
         aplOptions->logMessage(
             LogLevel::ERROR, "handleMediaUpdateFailed", "Can't update media state. MediaStatus structure is wrong");
         sendError("Can't update media state.");
@@ -992,7 +1039,10 @@ void AplCoreConnectionManager::handleMediaUpdate(const rapidjson::Value& update)
     const apl::TrackState trackState = static_cast<apl::TrackState>(state[TRACK_STATE_KEY].GetInt());
 
     apl::MediaState mediaState(
-        trackIndex, trackCount, currentTime, duration, state[PAUSED_KEY].GetBool(), state[ENDED_KEY].GetBool());
+            trackIndex, trackCount, currentTime, duration,
+            state[PAUSED_KEY].GetBool(),
+            state[ENDED_KEY].GetBool(),
+            state[MUTED_KEY].GetBool());
 
     mediaState.withTrackState(trackState);
     component->updateMediaState(mediaState, fromEvent);
@@ -1273,7 +1323,10 @@ rapidjson::Document AplCoreConnectionManager::blockingSend(
     std::lock_guard<std::mutex> lock{m_blockingSendMutex};
     m_replyPromise = std::promise<std::string>();
     m_blockingSendReplyExpected = true;
-    m_replyExpectedSequenceNumber = send(message);
+    // Increment expected sequence number first . While send does increment the sequence number, it calls
+    // sendMessage before returning the incremented number which creates a race condition in shouldHandleMessage
+    m_replyExpectedSequenceNumber = m_SequenceNumber + 1;
+    send(message);
 
     auto aplOptions = m_aplConfiguration->getAplOptions();
     auto future = m_replyPromise.get_future();

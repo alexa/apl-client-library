@@ -5,7 +5,9 @@
 import APLRenderer, { IAPLOptions } from "./@types/apl-html/lib/index";
 import { APLClient } from './APLClient';
 import { APLComponent } from './APLComponent';
+import { APLContext } from './APLContext';
 export interface IAPLWSOptions extends IAPLOptions {
+    scrollCommandDuration?: number;
     /**
      * The client to use to connect to the APLContent server.
      */
@@ -29,4 +31,5 @@ export declare class APLWSRenderer extends APLRenderer<IAPLWSOptions> {
     static create(options: IAPLWSOptions): APLWSRenderer;
     init(): Promise<void>;
     destroy(): void;
+    getContext(): APLContext;
 }
