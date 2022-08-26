@@ -1,5 +1,11 @@
 # Changelog for apl-client-library
 
+## [2022.1.1]
+
+### Changed
+
+- Bug fixes
+
 ## [2022.1]
 
 This release adds support for version 2022.1 of the APL specification.
