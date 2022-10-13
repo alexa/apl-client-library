@@ -24,6 +24,7 @@ export declare class APLWSRenderer extends APLRenderer<IAPLWSOptions> {
     componentMapping: {
         [id: string]: APLComponent;
     };
+    private mediaPlayerFactory;
     /**
      * Creates a new renderer
      * @param options Options for this instance

@@ -6,5 +6,6 @@ export * from './APLWSRenderer';
 export * from './APLClient';
 export * from './APLConfigurationChange';
 export * from './WebSocketClient';
+export * from './APLMediaPlayerFactory';
 export * from "./@types/apl-html/lib/index";
 export { default as APLRenderer } from "./@types/apl-html/lib/index";

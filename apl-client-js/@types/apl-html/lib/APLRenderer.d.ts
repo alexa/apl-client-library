@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AudioPlayerWrapper } from './AudioPlayerWrapper';
 import { Component } from './components/Component';
 import { MeasureMode } from './components/text/MeasureMode';
 import { IVideoFactory } from './components/video/IVideoFactory';
@@ -11,7 +10,7 @@ import { AnimationQuality } from './enums/AnimationQuality';
 import { DisplayState } from './enums/DisplayState';
 import { IExtensionManager } from './extensions/IExtensionManager';
 import { ILogger } from './logging/ILogger';
-import { AudioPlayerFactory } from './media/audio/AudioPlayer';
+import { AudioPlayerFactory } from './media/audio/AudioPlayerFactory';
 /**
  * Device viewport mode
  */
@@ -160,7 +159,7 @@ export interface IAPLOptions {
     viewport: IViewportCharacteristics;
     /** Device mode. If no provided "HUB" is used. */
     mode?: DeviceMode;
-    /** Optional externalized audio player */
+    /** Optional externalized audio player factory */
     audioPlayerFactory?: AudioPlayerFactory;
     /** Callback for executed SendEvent commands */
     onSendEvent?: (event: ISendEvent) => void;
@@ -221,10 +220,9 @@ export default abstract class APLRenderer<Options = any> {
     /** Document set flag for allowing config change driven resizing */
     protected supportsResizing: boolean;
     private configurationChangeThrottle;
+    /** Display state change handler */
     protected handleUpdateDisplayState: (displayState: DisplayState) => void;
-    private isEdge;
     readonly options: Options;
-    audioPlayer: AudioPlayerWrapper;
     /**
      * THis constructor is private
      * @param mOptions options passed in through `create`
@@ -380,5 +378,4 @@ export default abstract class APLRenderer<Options = any> {
     private passWindowEventsToCore;
     private shouldPassWindowEventToCore(event, focusedComponentId);
     private ensureComponentIsFocused(id, code);
-    private destroyAudioPlayer();
 }

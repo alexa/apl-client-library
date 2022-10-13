@@ -20,7 +20,9 @@ export declare enum EventProperty {
     kEventPropertyMediaType = 13,
     kEventPropertyName = 14,
     kEventPropertyPosition = 15,
-    kEventPropertyReason = 16,
-    kEventPropertySource = 17,
-    kEventPropertyValue = 18
+    kEventPropertyRangeStart = 16,
+    kEventPropertyRangeEnd = 17,
+    kEventPropertyReason = 18,
+    kEventPropertySource = 19,
+    kEventPropertyValue = 20
 }

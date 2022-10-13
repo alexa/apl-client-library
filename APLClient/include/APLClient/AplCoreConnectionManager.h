@@ -131,6 +131,13 @@ public:
     void interruptCommandSequence();
 
     /**
+     * Send a message to the view host
+     * @param message The message to send
+     * @return The sequence number of this message
+     */
+    unsigned int send(AplCoreViewhostMessage& message);
+
+    /**
      * Send a message to the view host and block until you get a reply
      * @param message The message to send
      * @return The resultant message or a NULL object if a response was not received.
@@ -209,6 +216,15 @@ public:
      * @param complexityScore the complexity score received from the viewhost, or 0 if unknown.
      */
      void onDocumentRendered(const std::chrono::steady_clock::time_point &renderTime, uint64_t complexityScore);
+
+    /**
+     * Retrieves the current time
+     * @return The time
+     */
+    std::chrono::milliseconds getCurrentTime() const {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch());
+    }
 
 private:
     /**
@@ -321,6 +337,30 @@ private:
     void mediaLoadFailed(const rapidjson::Value& payload);
 
     /**
+     * Handle the audioPlayerCallback message received from the viewhost
+     * @param payload
+     */
+    void audioPlayerCallback(const rapidjson::Value& payload);
+
+    /**
+     * Handle the audioPlayerSpeechMarks message received from the viewhost
+     * @param payload
+     */
+    void audioPlayerSpeechMarks(const rapidjson::Value& payload);
+
+    /**
+     * Handle the mediaPlayerUpdateMediaState message received from the viewhost
+     * @param payload
+     */
+    void mediaPlayerUpdateMediaState(const rapidjson::Value& payload);
+
+    /**
+     * Handle the mediaPlayerDoCallback message received from the viewhost
+     * @param payload
+     */
+    void mediaPlayerDoCallback(const rapidjson::Value& payload);
+
+    /**
      * Handle the getFocusableAreas message received from the viewhost
      * @param payload
      */
@@ -402,6 +442,7 @@ private:
     void sendHierarchy(const std::string& messageKey, bool blocking = false);
 
     rapidjson::Value buildDisplayedChildrenHierarchy(const apl::ComponentPtr& component, AplCoreViewhostMessage& message);
+
     /**
      * Process set of dirty components and send out dirty properties as required.
      * @param dirty dirty components set.
@@ -420,26 +461,10 @@ private:
     void coreFrameUpdate();
 
     /**
-     * Send a message to the view host
-     * @param message The message to send
-     * @return The sequence number of this message
-     */
-    unsigned int send(AplCoreViewhostMessage& message);
-
-    /**
      * Sends an error message to the view host
      * @param message The message to send to the view hsot
      */
     void sendError(const std::string& message);
-
-    /**
-     * Retrieves the current time
-     * @return The time
-     */
-    std::chrono::milliseconds getCurrentTime() {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch());
-    }
 
     /**
      * Get optional value from Json.
@@ -580,6 +605,7 @@ private:
 };
 
 using AplCoreConnectionManagerPtr = std::shared_ptr<AplCoreConnectionManager>;
+using AplCoreConnectionManagerWPtr = std::weak_ptr<AplCoreConnectionManager>;
 
 }  // namespace APLClient
 

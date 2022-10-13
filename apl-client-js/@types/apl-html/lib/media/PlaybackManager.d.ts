@@ -10,7 +10,6 @@ import { IMediaSource } from './IMediaSource';
  */
 export interface IMediaResource {
     toRepeat: number;
-    description: string;
     offset: number;
     repeatCount: number;
     trackIndex: number;

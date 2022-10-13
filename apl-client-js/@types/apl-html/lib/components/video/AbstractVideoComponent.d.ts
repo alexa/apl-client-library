@@ -4,10 +4,8 @@
  */
 import APLRenderer from '../../APLRenderer';
 import { AudioTrack } from '../../enums/AudioTrack';
-import { CommandControlMedia } from '../../enums/CommandControlMedia';
 import { PropertyKey } from '../../enums/PropertyKey';
 import { VideoScale } from '../../enums/VideoScale';
-import { IMediaEventListener } from '../../media/IMediaEventListener';
 import { IMediaSource } from '../../media/IMediaSource';
 import { PlaybackState } from '../../media/Resource';
 import { Component, FactoryFunction, IComponentProperties } from '../Component';
@@ -26,30 +24,12 @@ export interface IVideoProperties extends IComponentProperties {
 /**
  * @ignore
  */
-export declare abstract class AbstractVideoComponent extends Component<IVideoProperties>  implements IMediaEventListener {
+export declare abstract class AbstractVideoComponent extends Component<IVideoProperties> {
     protected constructor(renderer: APLRenderer, component: APL.Component, factory: FactoryFunction, parent?: Component);
     abstract onEvent(event: PlaybackState): void;
-    abstract playMedia(source: IMediaSource | IMediaSource[], audioTrack: AudioTrack): any;
-    abstract controlMedia(operation: CommandControlMedia, optionalValue: number): any;
     abstract play(waitForFinish?: boolean): any;
     abstract pause(): any;
-    abstract next(): any;
-    abstract previous(): any;
-    abstract rewind(): any;
-    abstract seek(offset: number): any;
-    abstract setTrack(trackIndex: number): any;
     protected abstract setScale(scale: VideoScale): any;
-    protected abstract setAudioTrack(audioTrack: AudioTrack): any;
-    protected abstract setMuted(muted: boolean): any;
-    protected abstract setSource(source: IMediaSource | IMediaSource[]): any;
-    protected abstract setTrackCurrentTime(trackCurrentTime: number): any;
-    protected abstract setTrackIndex(trackIndex: number): any;
     protected setTrackPaused(isPaused: boolean): void;
     private setScaleFromProp;
-    private setAudioTrackFromProp;
-    private setMutedFromProp;
-    private setSourceFromProp;
-    private setTrackCurrentTimeFromProp;
-    private setTrackIndexFromProp;
-    private setPauseFromProp;
 }

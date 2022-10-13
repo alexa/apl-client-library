@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { APLMediaPlayerFactory, MediaPlayerFactoryFunc } from './APLMediaPlayerFactory';
 import { ExtensionPayload } from './ExtensionMessageHandler';
 export interface RenderingOptionsPayload {
     legacyKaraoke: boolean;
@@ -89,6 +90,38 @@ export interface ContextPayload {
     messageId: string;
     result: string;
 }
+export interface AudioPlayerPayload {
+    playerId: string;
+}
+export interface AudioPlayerSetTrackPayload extends AudioPlayerPayload {
+    url: string;
+}
+export interface MediaPlayerPayload {
+    playerId: string;
+}
+export interface MediaPlayerSetTrackListPayload extends MediaPlayerPayload {
+    trackArray: Array<{
+        url: string;
+        offset: number;
+        duration: number;
+        repeatCount: number;
+    }>;
+}
+export interface MediaPlayerSetTrackIndexPayload extends MediaPlayerPayload {
+    index: number;
+}
+export interface MediaPlayerSeekPayload extends MediaPlayerPayload {
+    offset: number;
+}
+export interface MediaPlayerPlayPayload extends MediaPlayerPayload {
+    waitForFinish: boolean;
+}
+export interface MediaPlayerSetAudioTrackPayload extends MediaPlayerPayload {
+    audioTrack: number;
+}
+export interface MediaPlayerSetMutePayload extends MediaPlayerPayload {
+    mute: boolean;
+}
 export interface PayloadTypeMap {
     'renderingOptions': RenderingOptionsPayload;
     'measure': MeasurePayload;
@@ -114,6 +147,24 @@ export interface PayloadTypeMap {
     'getDisplayedChildId': DisplayedChildIdPayload;
     'supportsResizing': SupportsResizingPayload;
     'extension': ExtensionPayload;
+    'createAudioPlayer': AudioPlayerPayload;
+    'audioPlayerPlay': AudioPlayerPayload;
+    'audioPlayerSetTrack': AudioPlayerSetTrackPayload;
+    'audioPlayerPause': AudioPlayerPayload;
+    'audioPlayerRelease': AudioPlayerPayload;
+    'mediaPlayerCreate': MediaPlayerPayload;
+    'mediaPlayerDelete': MediaPlayerPayload;
+    'mediaPlayerSetTrackList': MediaPlayerSetTrackListPayload;
+    'mediaPlayerSetTrackIndex': MediaPlayerSetTrackIndexPayload;
+    'mediaPlayerSeek': MediaPlayerSeekPayload;
+    'mediaPlayerPlay': MediaPlayerPlayPayload;
+    'mediaPlayerPause': MediaPlayerPayload;
+    'mediaPlayerStop': MediaPlayerPayload;
+    'mediaPlayerNext': MediaPlayerPayload;
+    'mediaPlayerPrevious': MediaPlayerPayload;
+    'mediaPlayerRewind': MediaPlayerPayload;
+    'mediaPlayerSetAudioTrack': MediaPlayerSetAudioTrackPayload;
+    'mediaPlayerSetMute': MediaPlayerSetMutePayload;
 }
 export interface Message<Type extends keyof PayloadTypeMap> {
     type: Type;
@@ -155,6 +206,24 @@ export interface IAPLMessageListener {
     onGetDisplayedChildId?(message: Message<'getDisplayedChildId'>): void;
     onSupportsResizing?(message: Message<'supportsResizing'>): void;
     onExtensionEvent?(message: Message<'extension'>): void;
+    onCreateAudioPlayer?(message: Message<'createAudioPlayer'>): void;
+    onAudioPlayerPlay?(message: Message<'audioPlayerPlay'>): void;
+    onAudioPlayerSetTrack?(message: Message<'audioPlayerSetTrack'>): void;
+    onAudioPlayerPause?(message: Message<'audioPlayerPause'>): void;
+    onAudioPlayerRelease?(message: Message<'audioPlayerRelease'>): void;
+    onMediaPlayerCreate?(message: Message<'mediaPlayerCreate'>): void;
+    onMediaPlayerDelete?(message: Message<'mediaPlayerDelete'>): void;
+    onMediaPlayerSetTrackList?(message: Message<'mediaPlayerSetTrackList'>): void;
+    onMediaPlayerSetTrackIndex?(message: Message<'mediaPlayerSetTrackIndex'>): void;
+    onMediaPlayerSeek?(message: Message<'mediaPlayerSeek'>): void;
+    onMediaPlayerPlay?(message: Message<'mediaPlayerPlay'>): void;
+    onMediaPlayerPause?(message: Message<'mediaPlayerPause'>): void;
+    onMediaPlayerStop?(message: Message<'mediaPlayerStop'>): void;
+    onMediaPlayerNext?(message: Message<'mediaPlayerNext'>): void;
+    onMediaPlayerPrevious?(message: Message<'mediaPlayerPrevious'>): void;
+    onMediaPlayerRewind?(message: Message<'mediaPlayerRewind'>): void;
+    onMediaPlayerSetAudioTrack?(message: Message<'mediaPlayerSetAudioTrack'>): void;
+    onMediaPlayerSetMute?(message: Message<'mediaPlayerSetMute'>): void;
 }
 /**
  * Extend this class to implement a client. Must implement events described in
@@ -162,7 +231,9 @@ export interface IAPLMessageListener {
  */
 export declare abstract class APLClient {
     private logger;
-    constructor();
+    private mediaPlayerFactory;
+    constructor(mediaPlayerFactoryFunc?: MediaPlayerFactoryFunc);
+    getMediaPlayerFactory(): APLMediaPlayerFactory;
     /**
      * Override this method to send a message
      * @param message

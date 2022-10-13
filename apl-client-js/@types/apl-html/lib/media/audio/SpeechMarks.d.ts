@@ -7,7 +7,7 @@
  * The type of speech mark
  * @ignore
  */
-export declare type SpeechMarkType = 'visime' | 'word' | 'sentence';
+export declare type SpeechMarkType = 'visime' | 'word' | 'sentence' | 'ssml';
 /**
  * Base type
  * @ignore

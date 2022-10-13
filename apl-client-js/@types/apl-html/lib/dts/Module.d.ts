@@ -2,6 +2,10 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+/// <reference path="./AudioPlayer.d.ts" />
+/// <reference path="./AudioPlayerFactory.d.ts" />
+/// <reference path="./MediaPlayer.d.ts" />
+/// <reference path="./MediaPlayerFactory.d.ts" />
 /// <reference path="./Context.d.ts" />
 /// <reference path="./Content.d.ts" />
 /// <reference path="./Component.d.ts" />
@@ -79,6 +83,10 @@ declare namespace APL {
         public Metrics: typeof Metrics;
         public LiveMap: typeof LiveMap;
         public LiveArray: typeof LiveArray;
+        public AudioPlayer: typeof AudioPlayer;
+        public AudioPlayerFactory: typeof AudioPlayerFactory;
+        public MediaPlayer: typeof MediaPlayer;
+        public MediaPlayerFactory: typeof MediaPlayerFactory;
     }
 }
 declare var Module: APL.Module;

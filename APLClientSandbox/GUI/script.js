@@ -36,8 +36,8 @@ class WebsocketConnection {
         };
 
         this.socket.onmessage = function(event) {
-            self.callback(JSON.parse(event.data));
             console.debug(`[Websocket] Data received from server: ${event.data}`);
+            self.callback(JSON.parse(event.data));
         };
 
         this.socket.onclose = function(event) {

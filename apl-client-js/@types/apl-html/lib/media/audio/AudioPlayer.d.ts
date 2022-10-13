@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { IAudioEventListener } from './IAudioEventListener';
-export declare type AudioPlayerFactory = (eventListener: IAudioEventListener) => AudioPlayer;
+import { IAudioPlayer } from './IAudioPlayer';
 export declare type IAudioNode = GainNode;
-export declare abstract class AudioPlayer {
+export declare abstract class AudioPlayer implements IAudioPlayer {
     private eventListener;
     private resourceMap;
     private currentSource;
@@ -16,7 +16,7 @@ export declare abstract class AudioPlayer {
     prepare(url: string, decodeMarkers: boolean): string;
     protected onPlaybackFinished(id: string): void;
     protected onError(id: string, reason: string): void;
-    abstract play(id: string): any;
+    abstract play(id: string): void;
     protected playWithContext(id: string, audioContext: AudioContext): void;
     protected setCurrentAudioNode(node: IAudioNode): void;
     private getConnectedAudioNode(context);

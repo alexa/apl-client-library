@@ -19,10 +19,13 @@
 #include "APLClient/AplCoreLocaleMethods.h"
 #include "APLClient/AplCoreConnectionManager.h"
 #include "APLClient/AplCoreViewhostMessage.h"
+#include "APLClient/AplCoreAudioPlayerFactory.h"
+#include "APLClient/AplCoreMediaPlayerFactory.h"
 
 #include <apl/datasource/dynamicindexlistdatasourceprovider.h>
 #include <apl/datasource/dynamictokenlistdatasourceprovider.h>
 #include <apl/content/rootproperties.h>
+#include <apl/component/videocomponent.h>
 
 namespace APLClient {
 
@@ -179,6 +182,10 @@ AplCoreConnectionManager::AplCoreConnectionManager(AplConfigurationPtr config) :
     m_messageHandlers.emplace("extension", [this](const rapidjson::Value& payload) { handleExtensionMessage(payload); });
     m_messageHandlers.emplace("mediaLoaded", [this](const rapidjson::Value& payload) { mediaLoaded(payload); });
     m_messageHandlers.emplace("mediaLoadFailed", [this](const rapidjson::Value& payload) { mediaLoadFailed(payload); });
+    m_messageHandlers.emplace("audioPlayerCallback", [this](const rapidjson::Value& payload) { audioPlayerCallback(payload); });
+    m_messageHandlers.emplace("speechMarkCallback", [this](const rapidjson::Value& payload) { audioPlayerSpeechMarks(payload); });
+    m_messageHandlers.emplace("mediaPlayerUpdateMediaState", [this](const rapidjson::Value& payload) { mediaPlayerUpdateMediaState(payload); });
+    m_messageHandlers.emplace("mediaPlayerDoCallback", [this](const rapidjson::Value& payload) { mediaPlayerDoCallback(payload); });
 }
 
 void AplCoreConnectionManager::setContent(const apl::ContentPtr content, const std::string& token) {
@@ -759,7 +766,9 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                      .enforceAPLVersion(apl::APLVersion::kAPLVersionIgnore)
                      .sequenceChildCache(5)
                      .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureManageMediaRequests)
-                     .set(apl::RootProperty::kDefaultIdleTimeout, -1);
+                     .set(apl::RootProperty::kDefaultIdleTimeout, -1)
+                     .audioPlayerFactory(AplCoreAudioPlayerFactory::create(shared_from_this(), m_aplConfiguration))
+                     .mediaPlayerFactory(AplCoreMediaPlayerFactory::create(shared_from_this(), m_aplConfiguration));
 
         // Data Sources
         config.dataSourceProvider(
@@ -1210,6 +1219,12 @@ void AplCoreConnectionManager::getFocused(const rapidjson::Value& payload) {
 }
 
 void AplCoreConnectionManager::setFocus(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "setFocusFailed", "Root context is null");
+        return;
+    }
+
     auto direction = payload["direction"].GetInt();
     auto top = payload["origin"].FindMember("top")->value.Get<float>();
     auto left = payload["origin"].FindMember("left")->value.Get<float>();
@@ -1243,6 +1258,68 @@ void AplCoreConnectionManager::mediaLoadFailed(const rapidjson::Value& payload) 
     auto errorCode = payload["errorCode"].GetInt();
     auto error = payload["error"].GetString();
     m_Root->mediaLoadFailed(source, errorCode, error);
+}
+
+void AplCoreConnectionManager::audioPlayerCallback(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "AplCoreConnectionManager::audioPlayerCallback", "Root context is null");
+        return;
+    }
+
+    auto audioFactory = std::dynamic_pointer_cast<AplCoreAudioPlayerFactory>(m_Root->getRootConfig().getAudioPlayerFactory());
+
+    auto playerId = payload["playerId"].GetString();
+    auto player = audioFactory->getPlayer(playerId);
+
+    if (player) player->onEvent(payload);
+}
+
+void AplCoreConnectionManager::audioPlayerSpeechMarks(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "AplCoreConnectionManager::audioPlayerCallback", "Root context is null");
+        return;
+    }
+
+    auto audioFactory = std::dynamic_pointer_cast<AplCoreAudioPlayerFactory>(m_Root->getRootConfig().getAudioPlayerFactory());
+
+    auto playerId = payload["playerId"].GetString();
+    auto player = audioFactory->getPlayer(playerId);
+
+    if (player) player->onSpeechMarks(payload);
+}
+
+void AplCoreConnectionManager::mediaPlayerUpdateMediaState(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "AplCoreConnectionManager::mediaPlayerUpdateMediaState", "Root context is null");
+        return;
+    }
+
+    auto mediaPlayerFactory = std::dynamic_pointer_cast<AplCoreMediaPlayerFactory>(m_Root->getRootConfig().getMediaPlayerFactory());
+
+    auto playerId = payload["playerId"].GetString();
+    auto mediaPlayer = mediaPlayerFactory->getMediaPlayer(playerId);
+    if (mediaPlayer) mediaPlayer->updateMediaState(payload);
+}
+
+void AplCoreConnectionManager::mediaPlayerDoCallback(const rapidjson::Value& payload) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "AplCoreConnectionManager::mediaPlayerDoCallback", "Root context is null");
+        return;
+    }
+
+    auto mediaPlayerFactory = std::dynamic_pointer_cast<AplCoreMediaPlayerFactory>(m_Root->getRootConfig().getMediaPlayerFactory());
+
+    auto playerId = payload["playerId"].GetString();
+    auto mediaPlayer = mediaPlayerFactory->getMediaPlayer(playerId);
+    if (mediaPlayer) mediaPlayer->doCallback(payload);
 }
 
 void AplCoreConnectionManager::handleUpdateCursorPosition(const rapidjson::Value& payload) {
@@ -1354,6 +1431,10 @@ void AplCoreConnectionManager::sendError(const std::string& message) {
 
 void AplCoreConnectionManager::handleScreenLock() {
     auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "handleScreenLockFailed", "Root context is null");
+        return;
+    }
 
     if (m_Root->screenLock() && !m_ScreenLock) {
         aplOptions->onActivityStarted(m_aplToken, APL_SCREEN_LOCK);
@@ -1584,9 +1665,14 @@ void AplCoreConnectionManager::processDirty(const std::set<apl::ComponentPtr>& d
 
 void AplCoreConnectionManager::coreFrameUpdate() {
     auto aplOptions = m_aplConfiguration->getAplOptions();
+    if (!m_Root) {
+        aplOptions->logMessage(LogLevel::ERROR, "coreFrameUpdateFailed", "Root context is null");
+        return;
+    }
     auto now = getCurrentTime() - m_StartTime;
     m_Root->updateTime(now.count(), getCurrentTime().count());
     m_Root->setLocalTimeAdjustment(aplOptions->getTimezoneOffset().count());
+    std::dynamic_pointer_cast<AplCoreAudioPlayerFactory>(m_Root->getRootConfig().getAudioPlayerFactory())->tick(*this);
 
     m_Root->clearPending();
 

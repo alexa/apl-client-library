@@ -16,20 +16,24 @@ export declare enum EventType {
     kEventTypePreroll = 4,
     /**     * Requests the bounds information for a text component     *     * The component is a TextComponent that needs the first line bounds measured     */
     kEventTypeRequestFirstLineBounds = 5,
+    /**     * Requests the bounds information for a text component     *     * kEventPropertyRangeStart byte range start     * kEventPropertyRangeEnd byte range end     *     * The component is a TextComponent that needs the line bounds measured     */
+    kEventTypeRequestLineBounds = 6,
+    /**     * Requests the karaoke line to be highlighted     *     * kEventPropertyRangeStart byte range start     * kEventPropertyRangeEnd byte range end     *     * The component is a TextComponent that needs the line highlighted. If range is empty (0,0)     * clear any highlights.     *     * Does not have an ActionRef     */
+    kEventTypeLineHighlight = 7,
     /**     * Send an event to the server     *     * kEventPropertySource: The rich source object describing who raised this event.     * kEventPropertyArguments: The argument array provided by the APL author     * kEventPropertyComponents: The values of the components requested by the APL author     *     * Does not have an ActionRef     */
-    kEventTypeSendEvent = 6,
+    kEventTypeSendEvent = 8,
     /**     * Speak a single component.     *     * kEventPropertyHighlightMode: Highlight mode. kEventHighlightModeLine or kEventHighlightModeBlock     * kEventPropertySource: The speech URI.     *     * The server must resolve the ActionRef when the scroll is completed.     */
-    kEventTypeSpeak = 7,
+    kEventTypeSpeak = 9,
     /**     * Send a finish command.     *     * kEventPropertyReason: The reason for the finish command. kEventReasonExit or kEventReasonBack     *     * Does not have an ActionRef     */
-    kEventTypeFinish = 8,
+    kEventTypeFinish = 10,
     /**     * A extension event registered with the core engine by the view host.     */
-    kEventTypeExtension = 9,
+    kEventTypeExtension = 11,
     /**     * DataSourceProvider created event that could be used for data fetch requests.     *     * kEventPropertyName: name (type) of datasource that requests a fetch.     * kEventPropertyValue: implementation specific fetch request.     *     * Does not have an ActionRef     */
-    kEventTypeDataSourceFetchRequest = 10,
+    kEventTypeDataSourceFetchRequest = 12,
     /**     * The Document is asking to be reinflated.  The server (view host) should do one of the following:     *     * 1.  Leave the ActionRef unresolved and call RootContext::reinflate() to reinflate the document.     *     The ActionRef will be terminated and can be ignored.     * 2.  Resolve the ActionRef.  The RootContext will resize() the document if the screen size has changed     *     and continue normal command processing.     *     * No properties     *     * Has an ActionRef.     *     * Note: It is not necessary to resolve the ActionRef if the server is calling RootContext::reinflate()     * because all currently running command sequences will be terminated including the current ActionRef.     */
-    kEventTypeReinflate = 11,
+    kEventTypeReinflate = 13,
     /**     * The Document is asking for external media to be loaded. Only issued when     * @c ExperimentalFeature::kExperimentalFeatureManageMediaRequests is enabled.     *     * kEventPropertySource: the source URI of the requested media     * kEventPropertyMediaType: the type of media being requested     *     * Does not have an ActionRef     *     * Note: Runtime supposed to answer with a call to RootContext::mediaLoaded when media loaded.     */
-    kEventTypeMediaRequest = 12,
+    kEventTypeMediaRequest = 14,
     /**     * The document asking for virtual keyboard to be open. It's up to runtime to satisfy this request or not.     * Only issued when @c ExperimentalFeature::kExperimentalFeatureRequestKeyboard is enabled.     *     * Does not have an ActionRef     */
-    kEventTypeOpenKeyboard = 13
+    kEventTypeOpenKeyboard = 15
 }
