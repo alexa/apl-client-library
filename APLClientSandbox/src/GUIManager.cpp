@@ -112,6 +112,10 @@ void GUIManager::onMessage(const std::string& payload) {
         const std::string payload = doc["payload"].GetString();
 
         m_client->updateAttentionSystemState(payload);
+    } else if (type == "processDataSourceUpdate") {
+        const std::string updateIndexListData = doc["updateIndexListData"].GetString();
+        const std::string dynamicDataSourceType = doc["dynamicDataSourceType"].GetString();
+        m_client->processDataSourceUpdate(updateIndexListData, dynamicDataSourceType);
     } else {
         Logger::error("GUIManager::onMessage", "Unknown message type", type);
     }

@@ -370,3 +370,8 @@ void AplClientBridge::updateAttentionSystemState(const std::string& state) {
         }
     }
 }
+
+void AplClientBridge::processDataSourceUpdate(const std::string& updateIndexListData, const std::string& dynamicDataSourceType) {
+    Logger::info("AplClientBridge::processDataSourceUpdate", updateIndexListData, dynamicDataSourceType);
+    m_executor.submit([this, updateIndexListData, dynamicDataSourceType]() { m_aplClientRenderer->dataSourceUpdate(dynamicDataSourceType, updateIndexListData, ""); });
+}

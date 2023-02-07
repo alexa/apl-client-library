@@ -72,8 +72,8 @@ public:
     void onRenderingEnded(DocumentId document) override;
 
 private:
-    bool updateTimer(DocumentId document, int id, std::function<bool(MetricRecord&)> updater);
-    bool updateCounter(DocumentId document, int id, std::function<bool(MetricRecord&)> updater);
+    bool updateTimer(DocumentId document, int id, const std::function<bool(MetricRecord&)>& updater);
+    bool updateCounter(DocumentId document, int id, const std::function<bool(MetricRecord&)>& updater);
     void invalidateInactiveDocuments();
     bool isActive(DocumentId document);
     DocumentId resolveDocument(DocumentId document);

@@ -153,7 +153,7 @@ TEST_F(AplAudioPlayerExtensionTest, GetLiveDataObjectsSuccess) {
     liveObjects = m_audioPlayerExtension->getLiveDataObjects();
     ASSERT_TRUE(liveObjects.count(expectedStateName) == 1);
     apl::LiveMap* playbackState = dynamic_cast<apl::LiveMap*>(liveObjects.find(expectedStateName)->second.get());
-    ASSERT_EQ(apl::Object::ObjectType::kMapType, playbackState->getType());
+    ASSERT_EQ(apl::LiveObject::ObjectType::kMapType, playbackState->getType());
     ASSERT_EQ("STOPPED", playbackState->get("playerActivity").asString());
     ASSERT_EQ(0, playbackState->get("offset").asInt());
 }

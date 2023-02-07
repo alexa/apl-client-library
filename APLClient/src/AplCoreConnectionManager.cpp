@@ -746,27 +746,29 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         bool disallowVideo = getOptionalBool(message, DISALLOWVIDEO_KEY, false);
         bool disallowDialog = getOptionalBool(message, DISALLOWDIALOG_KEY, false);
         bool disallowEditText = getOptionalBool(message, DISALLOWEDITTEXT_KEY, false);
-        int scrollCommandDuration = getOptionalValue(message, SCROLL_COMMAND_DURATION_KEY, 1000);
+        int scrollCommandDuration = (int)getOptionalValue(message, SCROLL_COMMAND_DURATION_KEY, 1000);
         int animationQuality =
             getOptionalInt(message, ANIMATIONQUALITY_KEY, apl::RootConfig::AnimationQuality::kAnimationQualityNormal);
 
         config = apl::RootConfig()
-                     .agent(agentName, agentVersion)
-                     .allowOpenUrl(allowOpenUrl)
-                     .disallowVideo(disallowVideo)
-                     .set(apl::RootProperty::kScrollCommandDuration, scrollCommandDuration)
-                     .set(apl::RootProperty::kDisallowVideo, disallowVideo)
-                     .set(apl::RootProperty::kDisallowEditText, disallowEditText)
-                     .set(apl::RootProperty::kDisallowDialog, disallowDialog)
-                     .animationQuality(static_cast<apl::RootConfig::AnimationQuality>(animationQuality))
+                     .set({
+                         {apl::RootProperty::kAgentName, agentName},
+                         {apl::RootProperty::kAgentVersion, agentVersion},
+                         {apl::RootProperty::kAllowOpenUrl, allowOpenUrl},
+                         {apl::RootProperty::kDisallowVideo, disallowVideo},
+                         {apl::RootProperty::kScrollCommandDuration, scrollCommandDuration},
+                         {apl::RootProperty::kDisallowEditText, disallowEditText},
+                         {apl::RootProperty::kDisallowDialog, disallowDialog},
+                         {apl::RootProperty::kAnimationQuality, static_cast<apl::RootConfig::AnimationQuality>(animationQuality)},
+                         {apl::RootProperty::kUTCTime, getCurrentTime().count()},
+                         {apl::RootProperty::kLocalTimeAdjustment, aplOptions->getTimezoneOffset().count()},
+                         {apl::RootProperty::kSequenceChildCache, 5},
+                         {apl::RootProperty::kDefaultIdleTimeout, -1}
+                      })
                      .measure(std::make_shared<AplCoreTextMeasurement>(shared_from_this(), m_aplConfiguration))
                      .localeMethods(std::make_shared<AplCoreLocaleMethods>(shared_from_this(), m_aplConfiguration))
-                     .utcTime(getCurrentTime().count())
-                     .localTimeAdjustment(aplOptions->getTimezoneOffset().count())
                      .enforceAPLVersion(apl::APLVersion::kAPLVersionIgnore)
-                     .sequenceChildCache(5)
                      .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureManageMediaRequests)
-                     .set(apl::RootProperty::kDefaultIdleTimeout, -1)
                      .audioPlayerFactory(AplCoreAudioPlayerFactory::create(shared_from_this(), m_aplConfiguration))
                      .mediaPlayerFactory(AplCoreMediaPlayerFactory::create(shared_from_this(), m_aplConfiguration));
 
@@ -892,7 +894,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         // and displaying Children
         sendHierarchy(HIERARCHY_KEY);
 
-        auto idleTimeout = std::chrono::milliseconds(m_Root->settings().idleTimeout(config));
+        auto idleTimeout = std::chrono::milliseconds(m_Content->getDocumentSettings()->idleTimeout(config));
         aplOptions->onSetDocumentIdleTimeout(m_aplToken, idleTimeout);
         aplOptions->onRenderDocumentComplete(m_aplToken, true, "");
     } else {
@@ -942,10 +944,10 @@ void AplCoreConnectionManager::sendDocumentBackgroundMessage(const apl::Object& 
     auto& alloc = backgroundMsg.alloc();
     rapidjson::Value payload(rapidjson::kObjectType);
     rapidjson::Value backgroundValue(rapidjson::kObjectType);
-    if (background.isColor()) {
+    if (background.is<apl::Color>()) {
         backgroundValue.AddMember(COLOR_KEY, background.asString(), alloc);
-    } else if (background.isGradient()) {
-        backgroundValue.AddMember(GRADIENT_KEY, background.getGradient().serialize(alloc), alloc);
+    } else if (background.is<apl::Gradient>()) {
+        backgroundValue.AddMember(GRADIENT_KEY, background.get<apl::Gradient>().serialize(alloc), alloc);
     } else {
         backgroundValue.AddMember(COLOR_KEY, apl::Color().asString(), alloc);
     }
@@ -1073,7 +1075,7 @@ void AplCoreConnectionManager::handleGraphicUpdate(const rapidjson::Value& updat
         return;
     }
 
-    auto json = apl::GraphicContent::create(update["avg"].GetString());
+    auto json = apl::GraphicContent::create(m_Root->getSession(), update["avg"].GetString());
     component->updateGraphic(json);
 }
 
@@ -1093,7 +1095,6 @@ void AplCoreConnectionManager::handleEnsureLayout(const rapidjson::Value& payloa
         return;
     }
 
-    component->ensureLayout(true);
     auto msg = AplCoreViewhostMessage(ENSURELAYOUT_KEY);
     send(msg.setPayload(id));
 }
@@ -1333,7 +1334,7 @@ void AplCoreConnectionManager::handleUpdateCursorPosition(const rapidjson::Value
     const float x = payload[X_KEY].GetFloat();
     const float y = payload[Y_KEY].GetFloat();
     apl::Point cursorPosition(m_AplCoreMetrics->toCore(x), m_AplCoreMetrics->toCore(y));
-    m_Root->updateCursorPosition(cursorPosition);
+    m_Root->handlePointerEvent(apl::PointerEvent(apl::PointerEventType::kPointerMove, cursorPosition));
 }
 
 void AplCoreConnectionManager::handleHandlePointerEvent(const rapidjson::Value& payload) {
@@ -1347,9 +1348,9 @@ void AplCoreConnectionManager::handleHandlePointerEvent(const rapidjson::Value& 
     const float x = payload[X_KEY].GetFloat();
     const float y = payload[Y_KEY].GetFloat();
 
-    apl::Point point = apl::Point(m_AplCoreMetrics->toCore(x), m_AplCoreMetrics->toCore(y));
-    apl::PointerEventType pointerEventType = static_cast<apl::PointerEventType>(payload[POINTEREVENTTYPE_KEY].GetInt());
-    apl::PointerType pointerType = static_cast<apl::PointerType>(payload[POINTERTYPE_KEY].GetInt());
+    auto point = apl::Point(m_AplCoreMetrics->toCore(x), m_AplCoreMetrics->toCore(y));
+    auto pointerEventType = static_cast<apl::PointerEventType>(payload[POINTEREVENTTYPE_KEY].GetInt());
+    auto pointerType = static_cast<apl::PointerType>(payload[POINTERTYPE_KEY].GetInt());
     auto pointerId = static_cast<apl::id_type>(payload[POINTERID_KEY].GetInt());
     apl::PointerEvent pointerEvent = apl::PointerEvent(pointerEventType, point, pointerId, pointerType);
 
@@ -1533,7 +1534,7 @@ void AplCoreConnectionManager::processEvent(const apl::Event& event) {
 bool AplCoreConnectionManager::addPendingEvent(unsigned int token, const apl::Event& event, bool isViewhostEvent) {
     // If the event had an action ref, stash the reference for future use
     auto ref = event.getActionRef();
-    if (!ref.isEmpty()) {
+    if (!ref.empty()) {
         m_PendingEvents.emplace(token, ref);
         ref.addTerminateCallback([this, token, isViewhostEvent](const apl::TimersPtr&) {
             auto it = m_PendingEvents.find(token);
@@ -1631,22 +1632,25 @@ void AplCoreConnectionManager::processDirty(const std::set<apl::ComponentPtr>& d
         }
         if (component->getDirty().count(apl::kPropertyGraphic)) {
             // for graphic component, apl-client need walk into graphicPtr to get dirty and dirtyPropertyKeys.
-            rapidjson::Value vectorGraphicComponent = component->serializeDirty(msg.alloc());
-            rapidjson::Value dirtyGraphicElement(rapidjson::kArrayType);
-            const apl::GraphicPtr graphic = component->getCalculated(apl::kPropertyGraphic).getGraphic();
-            for (auto& graphicDirty : graphic->getDirty()) {
-                rapidjson::Value serializedGraphicElement = graphicDirty->serialize(msg.alloc());
-                rapidjson::Value dirtyPropertyKeys(rapidjson::kArrayType);
-                for (auto& dirtyPropertyKey : graphicDirty->getDirtyProperties()) {
-                    dirtyPropertyKeys.PushBack(dirtyPropertyKey, msg.alloc());
+            auto object = component->getCalculated(apl::kPropertyGraphic);
+            if (object.is<apl::Graphic>()) {
+                auto graphic = object.get<apl::Graphic>();
+                rapidjson::Value vectorGraphicComponent = component->serializeDirty(msg.alloc());
+                rapidjson::Value dirtyGraphicElement(rapidjson::kArrayType);
+                for (auto& graphicDirty : graphic->getDirty()) {
+                    rapidjson::Value serializedGraphicElement = graphicDirty->serialize(msg.alloc());
+                    rapidjson::Value dirtyPropertyKeys(rapidjson::kArrayType);
+                    for (auto& dirtyPropertyKey : graphicDirty->getDirtyProperties()) {
+                        dirtyPropertyKeys.PushBack(dirtyPropertyKey, msg.alloc());
+                    }
+                    serializedGraphicElement.AddMember("dirtyProperties", dirtyPropertyKeys, msg.alloc());
+                    dirtyGraphicElement.PushBack(serializedGraphicElement, msg.alloc());
                 }
-                serializedGraphicElement.AddMember("dirtyProperties", dirtyPropertyKeys, msg.alloc());
-                dirtyGraphicElement.PushBack(serializedGraphicElement, msg.alloc());
+                if (vectorGraphicComponent.HasMember("graphic") && vectorGraphicComponent["graphic"].IsObject()) {
+                    vectorGraphicComponent["graphic"].AddMember("dirty", dirtyGraphicElement, msg.alloc());
+                }
+                tempDirty[component->getUniqueId()] = vectorGraphicComponent;
             }
-            if (vectorGraphicComponent.HasMember("graphic") && vectorGraphicComponent["graphic"].IsObject()) {
-                vectorGraphicComponent["graphic"].AddMember("dirty", dirtyGraphicElement, msg.alloc());
-            }
-            tempDirty[component->getUniqueId()] = vectorGraphicComponent;
         }
         if (tempDirty.find(component->getUniqueId()) == tempDirty.end()) {
             tempDirty.emplace(component->getUniqueId(), component->serializeDirty(msg.alloc()));

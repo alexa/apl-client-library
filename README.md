@@ -1,10 +1,10 @@
 # Alexa Presentation Language (APL) Client Library
 
 <p>
- <a href="https://github.com/alexa/apl-client-library/tree/v2022.2.0" alt="version">
- <img src="https://img.shields.io/badge/stable%20version-2022.2.0-brightgreen" /></a>
- <a href="https://github.com/alexa/apl-core-library/tree/v2022.2.0" alt="APLCore">
- <img src="https://img.shields.io/badge/apl%20core%20library-2022.2.0-navy" /></a>
+ <a href="https://github.com/alexa/apl-client-library/tree/v2023.1.0" alt="version">
+ <img src="https://img.shields.io/badge/stable%20version-2023.1.0-brightgreen" /></a>
+ <a href="https://github.com/alexa/apl-core-library/tree/v2023.1.0" alt="APLCore">
+ <img src="https://img.shields.io/badge/apl%20core%20library-2023.1.0-navy" /></a>
 </p>
  
 ## Introduction
@@ -38,13 +38,20 @@ The APL Client Library depends on the following additional GitHub repos:
     git clone https://github.com/zaphoyd/websocketpp.git
     git clone git://github.com/alexa/apl-core-library.git
     ```
+1. Prepare the export directory
+    ```
+    cd ${WORK_AREA}
+    mkdir apl-exports
+    export APL_EXPORTS_PATH=${WORK_AREA}/apl-exports
+    ```
 1. Build apl-core
     ```
     cd ${WORK_AREA}/apl-core-library
     source ./apl-dev-env.sh
-    apl-build-core
+    mkdir build
     cd build
-    cmake -DBUILD_TESTS=OFF -DCOVERAGE=OFF -DENABLE_PIC=ON -DCMAKE_INSTALL_PREFIX=exports ..
+    cmake -DBUILD_TESTS=OFF -DCOVERAGE=OFF -DENABLE_PIC=ON -DCMAKE_INSTALL_PREFIX=${APL_EXPORTS_PATH} ..
+    make -j8
     make install
     ```
 1. Configure CMake in your working directory
@@ -55,21 +62,14 @@ The APL Client Library depends on the following additional GitHub repos:
     ```
     ```
     cmake ${WORK_AREA}/apl-client-library \
-    -DWEBSOCKETPP_INCLUDE_DIR=${WORK_AREA}/websocketpp \
-    -DCMAKE_BUILD_TYPE=DEBUG \
-    -DAPLCORE_INCLUDE_DIR=${WORK_AREA}/apl-core-library/aplcore/include \
-    -DAPLCORE_EXPORTS_INCLUDE_DIR=${WORK_AREA}/apl-core-library/build/exports/include \
-    -DAPLCORE_EXPORTS_LIB_DIR=${WORK_AREA}/apl-core-library/build/exports/lib \
-    -DYOGA_INCLUDE_DIR=${WORK_AREA}/apl-core-library/build/yoga-prefix/src/yoga \
-    -DAPLCORE_BUILD=${WORK_AREA}/apl-core-library/build \
-    -DAPL_CORE=ON \
-    -DBUILD_TESTING=OFF \
-    -DSANDBOX=ON \
-    -DSTANDALONE=ON
+        -DCMAKE_BUILD_TYPE=DEBUG \
+        -DCMAKE_PREFIX_PATH=${APL_EXPORTS_PATH} \
+        -DWEBSOCKETPP_INCLUDE_DIR=${WORK_AREA}/websocketpp \
+        -DSANDBOX=ON
     ```
 1. Build apl-client
    ```
-   make -j4
+   make -j8
    ```
 1. Run sandbox server
    ```
@@ -83,6 +83,30 @@ The APL Client Library depends on the following additional GitHub repos:
    npm start
    ```
 1. Open localhost:8000 in your browser
+
+### Run unit tests
+To include unit tests, when comfiguring CMake
+```
+cmake ${WORK_AREA}/apl-client-library \
+    -DCMAKE_BUILD_TYPE=DEBUG \
+    -DCMAKE_PREFIX_PATH=${APL_EXPORTS_PATH} \
+    -DWEBSOCKETPP_INCLUDE_DIR=${WORK_AREA}/websocketpp \
+    -DSANDBOX=ON \
+    -DBUILD_UNIT_TESTS=ON
+```
+
+### Export the client library
+When configuring CMake, add `CMAKE_INSTALL_PREFIX`
+```
+cmake ${WORK_AREA}/apl-client-library \
+    -DCMAKE_BUILD_TYPE=DEBUG \
+    -DCMAKE_PREFIX_PATH=${APL_EXPORTS_PATH} \
+    -DCMAKE_INSTALL_PREFIX=${APL_EXPORTS_PATH}
+```
+then
+```
+make install
+```
 
 ## Security
 

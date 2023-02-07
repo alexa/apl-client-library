@@ -388,6 +388,16 @@ const executeCommand = () => {
     })
 };
 
+const processDataSourceUpdate = () => {
+    localStorage.updateIndexListData = document.getElementById('updateIndexListData').value;
+    localStorage.dynamicDataSourceType = document.getElementById('dynamicDataSourceType').value;
+    socket.send({
+        type: 'processDataSourceUpdate',
+        updateIndexListData: localStorage.updateIndexListData,
+        dynamicDataSourceType: localStorage.dynamicDataSourceType
+    })
+};
+
 const attentionStateChange = (value) => {
     socket.send({
         type: 'updateAttentionSystemState',

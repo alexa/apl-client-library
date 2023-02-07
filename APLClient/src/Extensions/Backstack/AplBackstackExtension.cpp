@@ -147,11 +147,11 @@ bool AplBackstackExtension::handleGoBack(const apl::Object& params) {
         switch (backType) {
             case AplBackType::COUNT:
                 if (backValue.isNumber()) {
-                    return goBackCount(backValue.getUnsigned());
+                    return goBackCount(static_cast<unsigned>(backValue.getDouble()));
                 }
             case AplBackType::INDEX:
                 if (backValue.isNumber()) {
-                    return goBackIndex(backValue.getUnsigned());
+                    return goBackIndex(static_cast<unsigned>(backValue.getDouble()));
                 }
             case AplBackType::ID:
                 if (backValue.isString()) {

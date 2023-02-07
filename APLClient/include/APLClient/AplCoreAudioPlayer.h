@@ -109,6 +109,7 @@ private:
     apl::ActionRef m_PlayRef = apl::ActionRef(nullptr);
     bool m_Playing = false;
     bool m_Prepared = false;
+    bool m_Failed = false;
     int m_PlaybackStartTime = 0;
     std::string m_playerId;
 };

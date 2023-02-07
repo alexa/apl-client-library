@@ -107,6 +107,14 @@ public:
      */
     void updateAttentionSystemState(const std::string& state);
 
+    /**
+     * Update the data source
+     * @param updateIndexListData new data source to be updated
+     * @param dynamicDataSourceType data source type
+     */
+    void processDataSourceUpdate(const std::string& updateIndexListData,
+                                 const std::string& dynamicDataSourceType);
+
     bool handleBack();
 
     /**

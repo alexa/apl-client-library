@@ -26,50 +26,16 @@ AplClientRenderer.cpp)
 
 target_include_directories(APLClient PUBLIC "${APLClient_SOURCE_DIR}/include")
 
-if(NOT APLCORE_INCLUDE_DIR)
-    message(FATAL_ERROR "APLCore include dir is required")
+find_package(aplcore)
+target_link_libraries(APLClient PUBLIC apl::core)
+
+if (NOT MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error -Wno-reorder -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error -Wno-reorder -fPIC")
+elseif(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /GS /TP /W3 /Zc:wchar_t /DAPL_CORE_UWP /Zc:inline /Zc:twoPhase- /fp:precise /DWIN32_LEAN_AND_MEAN /DNOGDI /DWIN32 /D_WINDOWS")
 endif()
 
-if(NOT APLCORE_EXPORTS_INCLUDE_DIR)
-    message(FATAL_ERROR "APLCore exports include dir is required")
-endif()
-
-if(NOT APLCORE_EXPORTS_LIB_DIR)
-    message(FATAL_ERROR "APLCore exports lib dir is required")
-endif()
-
-if(APL_CORE)
-    if (NOT MSVC)
-        target_include_directories(APLClient PUBLIC
-                "${APLCORE_INCLUDE_DIR}"
-                "${APLCORE_EXPORTS_INCLUDE_DIR}"
-                "${YOGA_INCLUDE_DIR}")
-
-        target_link_libraries(APLClient ${APLCORE_EXPORTS_LIB_DIR}/libapl.a)
-        target_link_libraries(APLClient ${APLCORE_EXPORTS_LIB_DIR}/libyogacore.a)
-
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error -Wno-reorder -fPIC")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error -Wno-reorder -fPIC")
-    elseif(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /GS /TP /W3 /Zc:wchar_t /DAPL_CORE_UWP /Zc:inline /Zc:twoPhase- /fp:precise /DWIN32_LEAN_AND_MEAN /DNOGDI /DWIN32 /D_WINDOWS")
-        target_include_directories(APLClient PUBLIC
-                "${APLCORE_INCLUDE_DIR}"
-                "${APLCORE_EXPORTS_INCLUDE_DIR}"
-                "${YOGA_INCLUDE_DIR}")
-
-        target_link_libraries(APLClient ${APLCORE_EXPORTS_LIB_DIR}/apl.lib)
-        target_link_libraries(APLClient ${APLCORE_EXPORTS_LIB_DIR}/yogacore.lib)
-
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    endif()
-
-    add_definitions(-DAPL_CORE)
-endif()
-
-if (CMAKE_INSTALL_PREFIX)
-    install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
-    install(DIRECTORY "${APLCORE_INCLUDE_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
-    install(DIRECTORY "${APLCORE_EXPORTS_INCLUDE_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
-    install(TARGETS APLClient DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
-endif()
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/" DESTINATION include)
+install(TARGETS APLClient DESTINATION lib)

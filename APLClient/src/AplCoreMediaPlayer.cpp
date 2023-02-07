@@ -18,6 +18,15 @@
 
 namespace APLClient {
 
+static std::string textTrackTypeToKind(apl::TextTrackType type) {
+    switch (type) {
+        case apl::TextTrackType::kTextTrackTypeCaption:
+            return "captions";
+        default:
+            return "unsupported";
+    }
+}
+
 std::shared_ptr<AplCoreMediaPlayer>
 AplCoreMediaPlayer::create(AplCoreConnectionManagerWPtr aplCoreConnectionManager,
                            AplConfigurationPtr config,
@@ -110,6 +119,17 @@ AplCoreMediaPlayer::setTrackList(std::vector<apl::MediaTrack> tracks)
         trackObj.AddMember("offset", track.offset, alloc);
         trackObj.AddMember("duration", track.duration, alloc);
         trackObj.AddMember("repeatCount", track.repeatCount, alloc);
+
+        rapidjson::Value textTrackArray(rapidjson::kArrayType);
+        for (auto& textTrack : track.textTracks) {
+            rapidjson::Value textTrackObj(rapidjson::kObjectType);
+            textTrackObj.AddMember("kind", textTrackTypeToKind(textTrack.type), alloc);
+            textTrackObj.AddMember("url", textTrack.url, alloc);
+            textTrackObj.AddMember("description", textTrack.description, alloc);
+
+            textTrackArray.PushBack(textTrackObj, alloc);
+        }
+        trackObj.AddMember("textTracks", textTrackArray, alloc);
 
         trackArray.PushBack(trackObj, alloc);
     }
@@ -269,7 +289,8 @@ AplCoreMediaPlayer::doCallback(const rapidjson::Value& payload)
     if (!isActive()) return;
 
     auto eventType = static_cast<apl::MediaPlayerEventType>(payload["eventType"].GetInt());
-    if (eventType == apl::MediaPlayerEventType::kMediaPlayerEventEnd) {
+    if (eventType == apl::MediaPlayerEventType::kMediaPlayerEventEnd
+        || eventType == apl::MediaPlayerEventType::kMediaPlayerEventTrackFail) {
         resolveExistingAction();
     }
     auto callback = mCallback;

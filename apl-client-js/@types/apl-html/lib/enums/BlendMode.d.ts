@@ -19,5 +19,8 @@ export declare enum BlendMode {
     kBlendModeHue = 12,
     kBlendModeSaturation = 13,
     kBlendModeColor = 14,
-    kBlendModeLuminosity = 15
+    kBlendModeLuminosity = 15,
+    kBlendModeSourceAtop = 16,
+    kBlendModeSourceIn = 17,
+    kBlendModeSourceOut = 18
 }

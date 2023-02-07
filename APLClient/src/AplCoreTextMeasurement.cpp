@@ -81,8 +81,8 @@ apl::LayoutSize AplCoreTextMeasurement::measure(
         auto aplCoreMetrics = aplCoreConnectionManager->aplCoreMetrics();
 
         rapidjson::Value payload(component->serialize(alloc));
-        payload.AddMember("width", aplCoreMetrics->toViewhost(std::isnan(width) ? INT_MAX : width), alloc);
-        payload.AddMember("height", aplCoreMetrics->toViewhost(std::isnan(height) ? INT_MAX : height), alloc);
+        payload.AddMember("width", aplCoreMetrics->toViewhost(std::isnan(width) ? (float)INT_MAX : width), alloc);
+        payload.AddMember("height", aplCoreMetrics->toViewhost(std::isnan(height) ? (float)INT_MAX : height), alloc);
         payload.AddMember("widthMode", widthMode, alloc);
         payload.AddMember("heightMode", heightMode, alloc);
         msg.setPayload(std::move(payload));
@@ -163,8 +163,8 @@ float AplCoreTextMeasurement::baseline(apl::Component* component, float width, f
 
             auto aplOptions = m_aplConfiguration->getAplOptions();
             aplOptions->logMessage(LogLevel::WARN, __func__, "Got invalid result from baseline calculation. Returning 0.");
-            return 0;
         }
     }
+    return 0;
 }
 }  // namespace APLClient

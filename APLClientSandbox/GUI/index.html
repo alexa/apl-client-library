@@ -16,6 +16,7 @@
         <button class="tab" onclick="switchTab(event, 'dataTab')">Data</button>
         <button class="tab" onclick="switchTab(event, 'viewportsTab')">Viewports</button>
         <button class="tab" onclick="switchTab(event, 'commandTab')">Command</button>
+        <button class="tab" onclick="switchTab(event, 'dynamicDataTab')">Dynamic Data</button>
         <button class="tab" onclick="switchTab(event, 'optionsTab')">Options</button>
     </div>
     <div id="docTab" class="content">
@@ -88,6 +89,28 @@
     "commands": []
 }
 </textarea>
+    </div>
+    <div id="dynamicDataTab" class="content">
+        <div>
+            <label for="dynamicDataSourceType">Dynamic Data Source Type:</label>
+            <select id="dynamicDataSourceType">
+                <option value="dynamicIndexList">dynamicIndexList</option>
+                <option value="dynamicTokenList">dynamicTokenList</option>
+            </select>
+        </div>
+        <div>
+           <label for="updateIndexListData">UpdateIndexListData<sup><a href="https://developer.amazon.com/en-US/docs/alexa/alexa-presentation-language/apl-interface.html#updateindexlistdata-directive" target="_blank">?</a></sup> directive body:</label>
+           <br><textarea id="updateIndexListData" style="height: 220px; width: 90%;">
+{
+    "listId": "list-id",
+    "listVersion": 1,
+    "operations": []
+}
+        </textarea>
+        </div>
+        <div>
+            <button id="processDataSourceUpdate" onclick="processDataSourceUpdate();">Update Dynamic DataSource</button>
+        </div>
     </div>
     <div id="optionsTab" class="content">
         <label for="width">Width</label>

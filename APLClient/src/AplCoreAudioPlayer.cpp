@@ -110,9 +110,11 @@ AplCoreAudioPlayer::play(apl::ActionRef actionRef) {
     resolveExistingAction();
 
     m_PlayRef = actionRef;
-
     if (m_Prepared) {
         sendAudioPlayerCommand("audioPlayerPlay");
+    }
+    if (m_Failed) {
+        resolveExistingAction();
     }
 }
 
@@ -127,6 +129,7 @@ AplCoreAudioPlayer::onEventInternal(apl::AudioPlayerEventType eventType, const a
     switch (eventType) {
         case apl::kAudioPlayerEventEnd:
         case apl::kAudioPlayerEventFail:
+            m_Failed = true;
             resolveExistingAction();
             break;
         case apl::kAudioPlayerEventReady:

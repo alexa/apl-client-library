@@ -15,8 +15,3 @@ export interface IBlend extends IBaseFilter {
     destination: number;
 }
 export declare function getBlendFilter(filter: Filter, imageSrcArray: string[]): IImageFilterElement | undefined;
-/**
- * Return Blend Mode
- * https://codepen.io/yoksel/pen/BiExv
- */
-export declare function getBlendMode(mode: BlendMode): string;

@@ -16,7 +16,20 @@
 #ifndef APLCLIENT_APL_APLCOREMETRICS_H
 #define APLCLIENT_APL_APLCOREMETRICS_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreorder"
+#pragma push_macro("DEBUG")
+#pragma push_macro("TRUE")
+#pragma push_macro("FALSE")
+#undef DEBUG
+#undef TRUE
+#undef FALSE
+#include <apl/apl.h>
 #include <apl/scaling/metricstransform.h>
+#pragma pop_macro("DEBUG")
+#pragma pop_macro("TRUE")
+#pragma pop_macro("FALSE")
+#pragma GCC diagnostic pop
 
 namespace APLClient {
 

@@ -431,14 +431,14 @@ AplMetricsRecorder::createCounter(DocumentId document,
 bool
 AplMetricsRecorder::updateTimer(DocumentId document,
                                 int id,
-                                std::function<bool(MetricRecord&)> updater) {
+                                const std::function<bool(MetricRecord&)>& updater) {
     const std::lock_guard<std::mutex> lock(mDocumentMutex);
     if (mDocuments.count(document) == 0) {
         return false;
     }
 
     auto& records = mDocuments.at(document).metrics;
-    if (id < 0 || id >= records.size()) {
+    if (id < 0 || (std::size_t)id >= records.size()) {
         return false;
     }
 
@@ -453,13 +453,13 @@ AplMetricsRecorder::updateTimer(DocumentId document,
 bool
 AplMetricsRecorder::updateCounter(DocumentId document,
                                   int id,
-                                  std::function<bool(MetricRecord&)> updater) {
+                                  const std::function<bool(MetricRecord&)>& updater) {
     const std::lock_guard<std::mutex> lock(mDocumentMutex);
     if (mDocuments.count(document) == 0) {
         return false;
     }
     auto& records = mDocuments.at(document).metrics;
-    if (id < 0 || id >= records.size()) {
+    if (id < 0 || (std::size_t)id >= records.size()) {
         return false;
     }
 
