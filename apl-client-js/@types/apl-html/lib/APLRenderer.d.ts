@@ -252,7 +252,7 @@ export default abstract class APLRenderer<Options = any> {
      */
     onDisplayStateChange(displayStateOptions: IDisplayStateOptions): void;
     getComponentCount(): number;
-    private setBackground(docTheme);
+    private setBackground();
     /**
      * Get developer tool options (if defined)
      */

@@ -1,10 +1,10 @@
 # Alexa Presentation Language (APL) Client Library
 
 <p>
- <a href="https://github.com/alexa/apl-client-library/tree/v2023.1.0" alt="version">
- <img src="https://img.shields.io/badge/stable%20version-2023.1.0-brightgreen" /></a>
- <a href="https://github.com/alexa/apl-core-library/tree/v2023.1.0" alt="APLCore">
- <img src="https://img.shields.io/badge/apl%20core%20library-2023.1.0-navy" /></a>
+ <a href="https://github.com/alexa/apl-client-library/tree/v2023.2.0" alt="version">
+ <img src="https://img.shields.io/badge/stable%20version-2023.2.0-brightgreen" /></a>
+ <a href="https://github.com/alexa/apl-core-library/tree/v2023.2.0" alt="APLCore">
+ <img src="https://img.shields.io/badge/apl%20core%20library-2023.2.0-navy" /></a>
 </p>
  
 ## Introduction

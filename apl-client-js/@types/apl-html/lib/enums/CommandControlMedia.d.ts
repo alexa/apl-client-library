@@ -10,5 +10,6 @@ export declare enum CommandControlMedia {
     kCommandControlMediaPrevious = 3,
     kCommandControlMediaRewind = 4,
     kCommandControlMediaSeek = 5,
-    kCommandControlMediaSetTrack = 6
+    kCommandControlMediaSeekTo = 6,
+    kCommandControlMediaSetTrack = 7
 }

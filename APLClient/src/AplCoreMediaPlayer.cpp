@@ -219,6 +219,18 @@ AplCoreMediaPlayer::seek(int offset)
 }
 
 void
+AplCoreMediaPlayer::seekTo(int position)
+{
+    if (!isActive()) return;
+    resolveExistingAction();
+
+    rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> alloc;
+    rapidjson::Value payload(rapidjson::kObjectType);
+    payload.AddMember("position", position, alloc);
+    sendMediaPlayerCommand("mediaPlayerSeekTo", std::move(payload));
+}
+
+void
 AplCoreMediaPlayer::setTrackIndex(int trackIndex)
 {
     if (!isActive()) return;

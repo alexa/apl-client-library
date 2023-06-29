@@ -867,8 +867,6 @@ TEST_F(AplCoreConnectionManagerTest, HandleReInflateSuccess) {
     SetupMocksForDocumentRender();
     // Given a document build success.
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
-    const std::string measureMessageType = "\"type\":\"measure\"";
-    EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(measureMessageType, ""))).Times(AtLeast(1));
     const std::string hierarchyMessageType = "\"type\":\"hierarchy\"";
     EXPECT_CALL(*m_mockAplOptions, sendMessage(_, MatchOutMessage(hierarchyMessageType, ""))).Times(1);
 

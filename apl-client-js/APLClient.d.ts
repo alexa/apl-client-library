@@ -113,6 +113,9 @@ export interface MediaPlayerSetTrackIndexPayload extends MediaPlayerPayload {
 export interface MediaPlayerSeekPayload extends MediaPlayerPayload {
     offset: number;
 }
+export interface MediaPlayerSeekToPayload extends MediaPlayerPayload {
+    position: number;
+}
 export interface MediaPlayerPlayPayload extends MediaPlayerPayload {
     waitForFinish: boolean;
 }
@@ -157,6 +160,7 @@ export interface PayloadTypeMap {
     'mediaPlayerSetTrackList': MediaPlayerSetTrackListPayload;
     'mediaPlayerSetTrackIndex': MediaPlayerSetTrackIndexPayload;
     'mediaPlayerSeek': MediaPlayerSeekPayload;
+    'mediaPlayerSeekTo': MediaPlayerSeekToPayload;
     'mediaPlayerPlay': MediaPlayerPlayPayload;
     'mediaPlayerPause': MediaPlayerPayload;
     'mediaPlayerStop': MediaPlayerPayload;
@@ -191,7 +195,6 @@ export interface IAPLMessageListener {
     onEvent?(message: Message<'event'>): void;
     onEventTerminate?(message: Message<'eventTerminate'>): void;
     onBaseline?(message: Message<'baseline'>): void;
-    onDocTheme?(message: Message<'docTheme'>): void;
     onBackground?(message: Message<'background'>): void;
     onScreenLock?(message: Message<'screenLock'>): void;
     onEnsureLayout?(message: Message<'ensureLayout'>): void;
@@ -216,6 +219,7 @@ export interface IAPLMessageListener {
     onMediaPlayerSetTrackList?(message: Message<'mediaPlayerSetTrackList'>): void;
     onMediaPlayerSetTrackIndex?(message: Message<'mediaPlayerSetTrackIndex'>): void;
     onMediaPlayerSeek?(message: Message<'mediaPlayerSeek'>): void;
+    onMediaPlayerSeekTo?(message: Message<'mediaPlayerSeekTo'>): void;
     onMediaPlayerPlay?(message: Message<'mediaPlayerPlay'>): void;
     onMediaPlayerPause?(message: Message<'mediaPlayerPause'>): void;
     onMediaPlayerStop?(message: Message<'mediaPlayerStop'>): void;

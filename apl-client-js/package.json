@@ -1,7 +1,7 @@
 {
   "name": "apl-client",
-  "version": "2023.1.0",
-  "description": "this version supports APL 2023.1",
+  "version": "2023.2.0",
+  "description": "this version supports APL 2023.2",
   "repository": "hash:b7018d9d",
   "main": "index.js",
   "types": "./index.d.ts"

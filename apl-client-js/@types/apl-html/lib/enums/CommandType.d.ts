@@ -27,5 +27,7 @@ export declare enum CommandType {
     kCommandTypeClearFocus = 20,
     kCommandTypeFinish = 21,
     kCommandTypeReinflate = 22,
-    kCommandTypeCustomEvent = 23
+    kCommandTypeCustomEvent = 23,
+    kCommandTypeInsertItem = 24,
+    kCommandTypeRemoveItem = 25
 }

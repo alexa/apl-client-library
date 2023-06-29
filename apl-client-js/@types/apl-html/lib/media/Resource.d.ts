@@ -40,6 +40,7 @@ export declare enum ControlMediaCommandName {
     PREVIOUS = "previous",
     REWIND = "rewind",
     SEEK = "seek",
+    SEEKTO = "seekTo",
     SETTRACK = "setTrack"
 }
 /**

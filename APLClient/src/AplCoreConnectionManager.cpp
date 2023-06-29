@@ -357,7 +357,6 @@ void AplCoreConnectionManager::handleConfigurationChange(const rapidjson::Value&
     // config change for theme
     if (configurationChange.HasMember(DOCTHEME_KEY) && configurationChange[DOCTHEME_KEY].IsString()) {
         configChange = configChange.theme(configurationChange[DOCTHEME_KEY].GetString());
-        sendDocumentThemeMessage();
     }
     // config change for mode
     if (configurationChange.HasMember(MODE_KEY) &&
@@ -762,7 +761,6 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                          {apl::RootProperty::kAnimationQuality, static_cast<apl::RootConfig::AnimationQuality>(animationQuality)},
                          {apl::RootProperty::kUTCTime, getCurrentTime().count()},
                          {apl::RootProperty::kLocalTimeAdjustment, aplOptions->getTimezoneOffset().count()},
-                         {apl::RootProperty::kSequenceChildCache, 5},
                          {apl::RootProperty::kDefaultIdleTimeout, -1}
                       })
                      .measure(std::make_shared<AplCoreTextMeasurement>(shared_from_this(), m_aplConfiguration))
@@ -887,7 +885,6 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         inflationTimer->stop();
         // Init viewhost globals
         sendViewhostScalingMessage();
-        sendDocumentThemeMessage();
         sendDocumentBackgroundMessage(background);
 
         // Start rendering component hierarchy
@@ -923,19 +920,6 @@ void AplCoreConnectionManager::sendViewhostScalingMessage() {
         scaling.AddMember(VIEWPORT_WIDTH_KEY, m_AplCoreMetrics->getViewhostWidth(), reply.alloc());
         scaling.AddMember(VIEWPORT_HEIGHT_KEY, m_AplCoreMetrics->getViewhostHeight(), reply.alloc());
         send(reply.setPayload(std::move(scaling)));
-    }
-}
-
-void AplCoreConnectionManager::sendDocumentThemeMessage() {
-    if (m_Root) {
-        auto themeMsg = AplCoreViewhostMessage(DOCTHEME_KEY);
-        auto& alloc = themeMsg.alloc();
-        rapidjson::Value payload(rapidjson::kObjectType);
-        std::string docTheme = "dark";
-        docTheme = m_Root->getTheme();
-        payload.AddMember(DOCTHEME_KEY, rapidjson::Value(docTheme.c_str(), alloc).Move(), alloc);
-        themeMsg.setPayload(std::move(payload));
-        send(themeMsg);
     }
 }
 
@@ -998,11 +982,6 @@ void AplCoreConnectionManager::handleUpdate(const rapidjson::Value& update) {
         component->update(type, value);
     } else {
         auto value = update["value"].GetFloat();
-
-        if (type == apl::UpdateType::kUpdateScrollPosition) {
-            value = m_AplCoreMetrics->toCore(value);
-        }
-
         component->update(type, value);
     }
 }
@@ -1075,7 +1054,7 @@ void AplCoreConnectionManager::handleGraphicUpdate(const rapidjson::Value& updat
         return;
     }
 
-    auto json = apl::GraphicContent::create(m_Root->getSession(), update["avg"].GetString());
+    auto json = apl::GraphicContent::create(update["avg"].GetString());
     component->updateGraphic(json);
 }
 

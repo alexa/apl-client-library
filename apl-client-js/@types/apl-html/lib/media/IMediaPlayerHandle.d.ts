@@ -16,6 +16,7 @@ export interface IMediaPlayerHandle extends IMediaEventListener {
     }>): void;
     setTrackIndex(index: number): Promise<any>;
     seek(offset: number): Promise<any>;
+    seekTo(position: number): Promise<any>;
     play(waitForFinish: boolean): Promise<any>;
     pause(): Promise<any>;
     stop(): Promise<any>;

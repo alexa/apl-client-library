@@ -233,11 +233,6 @@ private:
     void sendViewhostScalingMessage();
 
     /**
-     * Sends document theme information to the client
-     */
-    void sendDocumentThemeMessage();
-
-    /**
      * Sends document background information to the client
      * @param background
      */

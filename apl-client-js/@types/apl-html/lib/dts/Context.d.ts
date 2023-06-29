@@ -23,7 +23,6 @@ declare namespace APL {
     export class Context extends Deletable {
         public static create(options: any, text: TextMeasure, metrics?: APL.Metrics, content?: APL.Content, config?: APL.RootConfig, scalingOptions?: any): Context;
         public topComponent(): APL.Component;
-        public getTheme(): string;
         public getBackground(): APL.IBackground;
         public setBackground(background: APL.IBackground): void;
         public getDataSourceContext(): Promise<string>;
