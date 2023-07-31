@@ -36,7 +36,7 @@ The APL Client Library depends on the following additional GitHub repos:
     WORK_AREA=$(pwd)
     git clone https://github.com/alexa/apl-client-library.git
     git clone https://github.com/zaphoyd/websocketpp.git
-    git clone git://github.com/alexa/apl-core-library.git
+    git clone https://github.com/alexa/apl-core-library.git
     ```
 1. Prepare the export directory
     ```
