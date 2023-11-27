@@ -144,6 +144,7 @@ TEST_F(AplCoreGuiRendererTest, RenderWithDocumentContent){
                           "  }"
                           "}";
 
+    EXPECT_CALL(*m_mockAplCoreConnectionManager, loadPackage(_)).Times(1).WillOnce(Return(true));
     EXPECT_CALL(*m_mockAplCoreConnectionManager, setSupportedViewports(VIEWPORT_PAYLOAD)).Times(1);
     EXPECT_CALL(*m_mockAplCoreConnectionManager, setContent(_, _)).Times(1);
 
@@ -155,46 +156,7 @@ TEST_F(AplCoreGuiRendererTest, RenderWithDocumentContent){
  */
 TEST_F(AplCoreGuiRendererTest, RenderEmptyPackageContent){
 
-    EXPECT_CALL(*m_mockAplOptions, downloadResource(SOURCE)).Times(1).WillOnce(Return(""));
-    EXPECT_CALL(*m_mockAplOptions, logMessage(_, _, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(TOKEN, false, "Unresolved import")).Times(1);
-    EXPECT_CALL(*m_mockAplOptions,getMaxNumberOfConcurrentDownloads()).Times(1).WillOnce(Return(5));
-
-    m_aplCoreGuiRenderer->renderDocument(DOCUMENT_APL_WITH_PACKAGE, DATA, VIEWPORT_PAYLOAD, TOKEN);
-}
-
-/**
- * Tests a document payload that needs to import packages and successfully adds
- * these packages to the content
- */
-TEST_F(AplCoreGuiRendererTest, RenderWithPackageContent){
-    const std::string packageContent = "{"
-                         " \"type\": \"APL\",   "
-                         "      \"version\": \"1.0.0\","
-                         "       \"resources\": ["
-                         "          {"
-                         "            \"description\": \"Definition of density types\","
-                         "            \"numbers\":"
-                         "             {   "
-                         "              \"viewportDensityXLow\": 0,"
-                         "              \"viewportDensityLow\": 1,"
-                         "              \"viewportDensityNormal\": 2,"
-                         "              \"viewportDensityHigh\": 3,"
-                         "              \"viewportDensityXHigh\": 4,"
-                         "              \"viewportDensityXXHigh\": 5 "
-                         "              }"
-                         "            }"
-                         "       ]"
-                         " }";
-
-
-    EXPECT_CALL(*m_mockAplOptions, downloadResource(SOURCE)).Times(1).WillOnce(Return(packageContent));
-    EXPECT_CALL(*m_mockAplOptions, logMessage(_, _, _)).Times(0);
-    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(0);
-    EXPECT_CALL(*m_mockAplCoreConnectionManager, setSupportedViewports(VIEWPORT_PAYLOAD)).Times(1);
-    EXPECT_CALL(*m_mockAplCoreConnectionManager, setContent(_, _)).Times(1);
-    EXPECT_CALL(*m_mockAplOptions,getMaxNumberOfConcurrentDownloads()).Times(1).WillOnce(Return(5));
-
+    EXPECT_CALL(*m_mockAplCoreConnectionManager, loadPackage(_)).Times(1).WillOnce(Return(false));
     m_aplCoreGuiRenderer->renderDocument(DOCUMENT_APL_WITH_PACKAGE, DATA, VIEWPORT_PAYLOAD, TOKEN);
 }
 

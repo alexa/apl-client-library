@@ -15,7 +15,23 @@ export interface IAPLWSOptions extends IAPLOptions {
     /**
      * List of extension uri's that the renderer will support.
      */
-    supportedExtensions?: string[];
+    supportedExtensions?: Array<SupportedExtension | string>;
+}
+/**
+ * Use SupportedExtension when providing flags to an AlexaExt
+ */
+export interface SupportedExtension {
+    uri: string;
+    /**
+     * If runtime-specific flags need to be provided to the extension as part of the registration
+     * request, they can be one of:
+     * - a single non-null value
+     * - an unkeyed container (array)
+     * - a key-value bag (keyed container)
+     */
+    flags?: string | string[] | {
+        [key: string]: string;
+    };
 }
 /**
  * The main renderer. Create a new one with `const renderer = APLWSRenderer.create(options);`

@@ -35,5 +35,7 @@ export declare enum EventType {
     /**     * The Document is asking for external media to be loaded. Only issued when     * @c ExperimentalFeature::kExperimentalFeatureManageMediaRequests is enabled.     *     * kEventPropertySource: the source URI of the requested media     * kEventPropertyMediaType: the type of media being requested     *     * Does not have an ActionRef     *     * Note: Runtime supposed to answer with a call to RootContext::mediaLoaded when media loaded.     */
     kEventTypeMediaRequest = 14,
     /**     * The document asking for virtual keyboard to be open. It's up to runtime to satisfy this request or not.     * Only issued when @c ExperimentalFeature::kExperimentalFeatureRequestKeyboard is enabled.     *     * Does not have an ActionRef     */
-    kEventTypeOpenKeyboard = 15
+    kEventTypeOpenKeyboard = 15,
+    /**     * Document config requires to be refreshed. This usually includes checking if content isWaiting()     * and subsequently resolving required packages.     */
+    kEventTypeContentRefresh = 16
 }

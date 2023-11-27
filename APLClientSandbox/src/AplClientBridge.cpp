@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 
+#include "APLClient/AplViewhostConfig.h"
 #include "APLClient/Telemetry/AplMetricsSinkInterface.h"
 #include "APLClient/Telemetry/NullAplMetricsRecorder.h"
 
@@ -28,6 +29,7 @@ using namespace APLClient::Extensions;
 using namespace APLClient::Telemetry;
 
 static const std::chrono::milliseconds RESOURCE_DOWNLOAD_TIMEOUT{3000};
+static const bool SANDBOX_USE_ALEXA_EXT = true;
 
 std::shared_ptr<AplClientBridge> AplClientBridge::create() {
     std::shared_ptr<AplClientBridge> client(new AplClientBridge());
@@ -35,6 +37,12 @@ std::shared_ptr<AplClientBridge> AplClientBridge::create() {
     std::shared_ptr<AplMetricsStreamSink> sink(new AplMetricsStreamSink(client));
     client->m_client->onTelemetrySinkUpdated(sink);
     client->m_aplClientRenderer = client->m_client->createRenderer("");
+
+    auto config = std::make_shared<APLClient::AplViewhostConfig>();
+    config->viewportWidth(960)
+            .viewportHeight(480);
+    client->m_aplClientRenderer->setViewhostConfig(config);
+
     client->loadExtensions();
     Logger::info("AplClientBridge::create", "MaxSupportedAPLVersion:", client->m_client->getAPLVersionReported());
     return client;
@@ -44,22 +52,73 @@ AplClientBridge::AplClientBridge() {
 }
 
 void AplClientBridge::loadExtensions() {
-    m_backstackExtension = std::make_shared<Backstack::AplBackstackExtension>(shared_from_this());
-    m_audioPlayerExtension = std::make_shared<AudioPlayer::AplAudioPlayerExtension>(shared_from_this());
-    m_audioPlayerAlarmsExtension = std::make_shared<AudioPlayer::AplAudioPlayerAlarmsExtension>(shared_from_this());
+    // From 2023.3, APLClientLibrary supports AlexaExt extensions. 
+    // Migrating away from "legacy" extensions (AplCoreExtensionInterface) is necessary to support marking extensions as required.
 
-    m_attentionSystemExtension = std::make_shared<AttentionSystem::AplAttentionSystemExtension>();
+    if (SANDBOX_USE_ALEXA_EXT) {
+        // ---------------- 
+        // AlexaExt
+        // ---------------- 
 
-    addExtensions({
-        m_backstackExtension,
-        m_audioPlayerExtension,
-        m_audioPlayerAlarmsExtension,
-        m_attentionSystemExtension
-    });
+        // Instantiate AlexaExt supporting classes
+        auto extensionRegistrar = std::make_shared<alexaext::ExtensionRegistrar>();
+        auto extensionExecutor = std::make_shared<AlexaExtExtensionExecutor>();
+
+        // Instantiate extensions
+        m_backstackExtension = std::make_shared<Backstack::AplBackstackExtension>(shared_from_this());
+        m_attentionSystemExtensionV2 = std::make_shared<alexaext::attention::AplAttentionSystemExtension>(extensionExecutor);
+        m_audioPlayerExtensionV2 = std::make_shared<alexaext::audioplayer::AplAudioPlayerExtension>(shared_from_this());
+        m_musicAlarmExtension = std::make_shared<alexaext::musicalarm::AplMusicAlarmExtension>(shared_from_this(), extensionExecutor);
+        
+        // Register extensions with ExtensionRegistrar
+        extensionRegistrar->registerExtension(std::make_shared<alexaext::LocalExtensionProxy>(m_backstackExtension));
+        extensionRegistrar->registerExtension(std::make_shared<alexaext::LocalExtensionProxy>(m_attentionSystemExtensionV2));
+        extensionRegistrar->registerExtension(std::make_shared<alexaext::LocalExtensionProxy>(m_audioPlayerExtensionV2));
+        extensionRegistrar->registerExtension(std::make_shared<alexaext::LocalExtensionProxy>(m_musicAlarmExtension));
+
+        // Provide AlexaExt infrastructure to AplCoreConnectionManager
+        addAlexaExtExtensions(
+            {
+                m_backstackExtension,
+                m_attentionSystemExtensionV2,
+                m_audioPlayerExtensionV2,
+                m_musicAlarmExtension
+            },
+            extensionRegistrar,
+            extensionExecutor
+        );
+    } else {
+        // ---------------- 
+        // AplCoreExtensionInterface
+        // a.k.a. "legacy" extensions 
+        // ---------------- 
+
+        m_backstackExtension = std::make_shared<Backstack::AplBackstackExtension>(shared_from_this());
+        m_audioPlayerExtension = std::make_shared<APLClient::Extensions::AudioPlayer::AplAudioPlayerExtension>(shared_from_this());
+        m_audioPlayerAlarmsExtension = std::make_shared<APLClient::Extensions::AudioPlayer::AplAudioPlayerAlarmsExtension>(shared_from_this());
+        m_attentionSystemExtension = std::make_shared<AttentionSystem::AplAttentionSystemExtension>();
+
+        addExtensions({
+            m_backstackExtension,
+            m_audioPlayerExtension,
+            m_audioPlayerAlarmsExtension,
+            m_attentionSystemExtension
+        });
+    }
 }
 
 void AplClientBridge::addExtensions(std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions) {
     m_executor.submit([this, extensions] { m_aplClientRenderer->addExtensions(extensions); });
+}
+
+void AplClientBridge::addAlexaExtExtensions(
+        std::unordered_set<alexaext::ExtensionPtr> extensions,
+        alexaext::ExtensionRegistrarPtr registrar,
+        AlexaExtExtensionExecutorPtr executor
+    ) {
+    m_executor.submit([this, extensions, registrar, executor] { 
+        m_aplClientRenderer->addAlexaExtExtensions(extensions, registrar, executor); 
+    });
 }
 
 void AplClientBridge::updateTick() {
@@ -196,6 +255,7 @@ void AplClientBridge::onCommandExecutionComplete(const std::string& token, APLCl
 
 void AplClientBridge::onRenderDocumentComplete(const std::string& token, bool result, const std::string& error) {
     Logger::info("AplClientBridge::onRenderDocumentComplete", "success:", result, ", error:", error);
+    updateAttentionSystemState(m_currentAttentionState);
 }
 
 void AplClientBridge::onVisualContextAvailable(
@@ -352,6 +412,14 @@ void AplClientBridge::onAudioPlayerAlarmSnooze() {
     Logger::info("AplClientBridge::onAudioPlayerAlarmSnooze", "AlarmSnooze");
 }
 
+void AplClientBridge::dismissAlarm() {
+    Logger::info("AplClientBridge::dismissAlarm", "AlarmDismiss");
+}
+
+void AplClientBridge::snoozeAlarm() {
+    Logger::info("AplClientBridge::snoozeAlarm", "AlarmSnooze");
+}
+
 const std::map<std::string, APLClient::Extensions::AttentionSystem::AttentionState> attentionStateMapping = {
     {"IDLE", APLClient::Extensions::AttentionSystem::AttentionState::IDLE},
     {"LISTENING", APLClient::Extensions::AttentionSystem::AttentionState::LISTENING},
@@ -359,16 +427,26 @@ const std::map<std::string, APLClient::Extensions::AttentionSystem::AttentionSta
     {"SPEAKING", APLClient::Extensions::AttentionSystem::AttentionState::SPEAKING}
 };
 
+const std::map<std::string, alexaext::attention::AttentionState> attentionStateMappingV2 = {
+    {"IDLE", alexaext::attention::AttentionState::IDLE},
+    {"LISTENING", alexaext::attention::AttentionState::LISTENING},
+    {"THINKING", alexaext::attention::AttentionState::THINKING},
+    {"SPEAKING", alexaext::attention::AttentionState::SPEAKING}
+};
+
 void AplClientBridge::updateAttentionSystemState(const std::string& state) {
     Logger::info("AplClientBridge::updateAttentionSystemState", "updateAttentionSystemState", state);
-    if (m_attentionSystemExtension) {
-        if (attentionStateMapping.find(state) == attentionStateMapping.end()) {
-            Logger::info("AplClientBridge::updateAttentionSystemState", "Invalid Attention System State: ", state);
-            return;
-        } else {
-            m_attentionSystemExtension->updateAttentionSystemState(attentionStateMapping.at(state));
-        }
+    if (attentionStateMapping.find(state) == attentionStateMapping.end()) {
+        Logger::info("AplClientBridge::updateAttentionSystemState", "Invalid Attention System State: ", state);
+        return;
     }
+    if (m_attentionSystemExtension) {
+        m_attentionSystemExtension->updateAttentionSystemState(attentionStateMapping.at(state));
+    }
+    if (m_attentionSystemExtensionV2) {
+        m_attentionSystemExtensionV2->updateAttentionState(attentionStateMappingV2.at(state));
+    }
+    m_currentAttentionState = state;
 }
 
 void AplClientBridge::processDataSourceUpdate(const std::string& updateIndexListData, const std::string& dynamicDataSourceType) {

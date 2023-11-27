@@ -22,17 +22,34 @@ namespace Extensions {
 /// String to identify log entries originating from this file.
 static const std::string TAG("AplCoreExtensionManager");
 
+// ---------------- 
+// AplCoreExtensionInterface
+// a.k.a. "legacy" extensions 
+// ---------------- 
+
 std::shared_ptr<AplCoreExtensionInterface> AplCoreExtensionManager::getExtension(const std::string& uri) {
     logMessage(LOGLEVEL_DEBUG, TAG, __func__, uri);
     if (m_Extensions.find(uri) != m_Extensions.end()) {
         return m_Extensions[uri];
     }
-    logMessage(LOGLEVEL_DEBUG, TAG, "No registered Extension", uri);
+    logMessage(LOGLEVEL_DEBUG, TAG, "getExtension", " No registered Extension: " + uri);
     return nullptr;
 }
 
 void AplCoreExtensionManager::addExtension(std::shared_ptr<AplCoreExtensionInterface> extension) {
+    // Setting the allowed extension type to: Legacy
+    if (!m_ExtensionsHaveBeenAdded) {
+        m_ExtensionsHaveBeenAdded = true;
+        m_UseAlexaExt = false;
+    }
+
+    if (m_UseAlexaExt) {
+        logMessage(LOGLEVEL_ERROR, TAG, "addExtension", "You can only register one type of extension. At least one AlexaExt has already been registed.");
+        return;
+    }
+
     if (!getExtension(extension->getUri())) {
+        logMessage(LOGLEVEL_ERROR, TAG, "addExtension", "Legacy extension added: " + extension->getUri());
         m_Extensions.insert({extension->getUri(), extension});
     }
 }
@@ -75,6 +92,60 @@ void AplCoreExtensionManager::onExtensionEvent(
         resultCallback->onExtensionEventResult(event, false);
     }
 }
+
+// ---------------- 
+// AlexaExt
+// ---------------- 
+
+void AplCoreExtensionManager::addAlexaExtExtension(const alexaext::ExtensionPtr& extension) {
+    if (!m_ExtensionsHaveBeenAdded) {
+        // Setting the allowed extension type to: AlexaExt
+        m_ExtensionsHaveBeenAdded = true;
+        m_UseAlexaExt = true;
+    }
+
+    if (!m_UseAlexaExt) {
+        logMessage(LOGLEVEL_ERROR, TAG, "addAlexaExtExtension", "You can only register one type of extension. At least one legacy extension has already been registed.");
+        return;
+    }
+
+    for (const auto& uri : extension->getURIs()) {
+        if (!getAlexaExtExtension(uri)) {
+            logMessage(LOGLEVEL_DEBUG, TAG, "addAlexaExtExtension", "AlexaExt added: " + uri);
+            m_AlexaExtExtensions.insert({uri, extension});
+        }
+    }
+}
+
+alexaext::ExtensionPtr AplCoreExtensionManager::getAlexaExtExtension(const std::string& uri) {
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, uri);
+
+    if (m_AlexaExtExtensions.find(uri) != m_AlexaExtExtensions.end()) {
+        return m_AlexaExtExtensions[uri];
+    }
+    logMessage(LOGLEVEL_DEBUG, TAG, "getAlexaExtExtension", "No registered AlexaExt Extension: " + uri);
+    return nullptr;
+}
+
+bool AplCoreExtensionManager::useAlexaExt() {
+    return m_UseAlexaExt;
+}
+
+void AplCoreExtensionManager::setExtensionRegistrar(const alexaext::ExtensionRegistrarPtr& registrar) {
+    m_extensionRegistrar = registrar;
+};
+
+alexaext::ExtensionRegistrarPtr AplCoreExtensionManager::getExtensionRegistrar() { 
+    return m_extensionRegistrar; 
+};
+
+void AplCoreExtensionManager::setExtensionExecutor(const AlexaExtExtensionExecutorPtr& executor) {
+    m_extensionExecutor = executor;
+};
+
+AlexaExtExtensionExecutorPtr AplCoreExtensionManager::getExtensionExecutor() { 
+    return m_extensionExecutor; 
+};
 
 }  // namespace Extensions
 }  // namespace APLClient

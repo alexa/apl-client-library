@@ -5,5 +5,6 @@
 declare namespace APL {
     export class MediaPlayerFactory extends Deletable {
         public static create(playerFactory): MediaPlayerFactory;
+        public destroy(): void;
     }
 }

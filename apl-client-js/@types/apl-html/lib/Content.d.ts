@@ -6,12 +6,13 @@
  * Holds all of the documents and data necessary to inflate an APL component hierarchy.
  */
 export declare class Content {
+    private data;
     /**
      * Creates an instance of a Content object. a single Content instance
      * can be used with multiple [[APLRenderer]]s.
      * @param doc The main APL document
      */
-    static create(doc: string): Content;
+    static create(doc: string, data?: string): Content;
     /**
      * APL doc settings.
      * @private
@@ -52,6 +53,7 @@ export declare class Content {
      * @param data The raw data source
      */
     addData(name: string, data: string): void;
+    refresh(metrics: APL.Metrics, config: APL.RootConfig): void;
     /**
      * Get document version specified in the input
      */

@@ -1,5 +1,5 @@
 {
-  "name": "aplclientsandbox",
+  "name": "@amzn/aplclientsandbox",
   "version": "1.0.0",
   "description": "The APL Client Sandbox GUI code which interacts with the APLClient Sandbox C++ application over websockets.",
   "main": "server.js",

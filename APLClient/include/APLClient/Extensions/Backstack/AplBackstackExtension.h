@@ -16,8 +16,15 @@
 #ifndef APLCLIENT_EXTENSIONS_BACKSTACK_APLBACKSTACKEXTENSION_H
 #define APLCLIENT_EXTENSIONS_BACKSTACK_APLBACKSTACKEXTENSION_H
 
+#include <list>
+#include <memory>
+#include <string>
+#include <vector>
+#include <alexaext/alexaext.h>
+
 #include "APLClient/Extensions/AplCoreExtensionInterface.h"
 #include "AplBackstackExtensionObserver.h"
+
 
 namespace APLClient {
 namespace Extensions {
@@ -36,6 +43,7 @@ static const std::string PROPERTY_BACK_TYPE_ID = "id";
  */
 class AplBackstackExtension
         : public AplCoreExtensionInterface
+        , public alexaext::ExtensionBase
         , public std::enable_shared_from_this<AplBackstackExtension> {
 public:
     /**
@@ -58,6 +66,20 @@ public:
     std::unordered_map<std::string, apl::LiveObjectPtr> getLiveDataObjects() override;
 
     void applySettings(const apl::Object& settings) override;
+    /// @}
+
+    /// @name alexaext::ExtensionBase
+    /// @{
+    rapidjson::Document
+    createRegistration(const alexaext::ActivityDescriptor &activity, const rapidjson::Value &registrationRequest) override;
+
+    void onSessionStarted(const alexaext::SessionDescriptor& session) override;
+    void onSessionEnded(const alexaext::SessionDescriptor& session) override;
+
+    void onActivityRegistered(const alexaext::ActivityDescriptor &activity) override;
+    void onActivityUnregistered(const alexaext::ActivityDescriptor& activity) override;
+
+    bool invokeCommand(const alexaext::ActivityDescriptor &activity, const rapidjson::Value &command) override;
     /// @}
 
     /// @name AplCoreExtensionEventCallbackInterface Functions
@@ -110,6 +132,10 @@ public:
     bool handleBack();
 
 private:
+    void applySettings(const rapidjson::Value *settings);
+
+    void updateLiveData(const alexaext::ActivityDescriptor &activity);
+
     /**
      * Enumerated back types
      */
@@ -178,6 +204,20 @@ private:
             apl::ObjectArray backstackIds;
             for (const auto & it : m_backstackIds->getArray()) {
                 backstackIds.emplace_back(it);
+            }
+            return backstackIds;
+        }
+
+        /**
+         * @return the list of document ids in the backstack.
+         */
+        rapidjson::Document getBackstackIdsArrayJson() const {
+            rapidjson::Document backstackIds;
+            backstackIds.SetArray();
+            for (const auto & it : m_backstackIds->getArray()) {
+                rapidjson::Value idNode;
+                idNode.SetString(it.getString().c_str(), backstackIds.GetAllocator());
+                backstackIds.PushBack(idNode, backstackIds.GetAllocator());
             }
             return backstackIds;
         }

@@ -42,6 +42,7 @@ declare namespace APL {
         public screenLock(): boolean;
         public currentTime(): number;
         public nextTime(): number;
+        public getViewportPixelSize(): object[];
         public getViewportWidth(): number;
         public getViewportHeight(): number;
         public getScaleFactor(): number;

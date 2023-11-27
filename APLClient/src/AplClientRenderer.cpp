@@ -105,6 +105,10 @@ void AplClientRenderer::handleMessage(const std::string& message) {
     m_aplConnectionManager->handleMessage(message);
 }
 
+void AplClientRenderer::setViewhostConfig(const AplViewhostConfigPtr& viewhostConfig) {
+    m_aplGuiRenderer->setViewhostConfig(viewhostConfig);
+}
+
 void AplClientRenderer::renderDocument(
     const std::string& document,
     const std::string& data,
@@ -164,6 +168,13 @@ const std::string AplClientRenderer::getCurrentAPLToken() {
 
 void AplClientRenderer::addExtensions(std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions) {
     m_aplConnectionManager->addExtensions(extensions);
+}
+
+void AplClientRenderer::addAlexaExtExtensions(
+        const std::unordered_set<alexaext::ExtensionPtr>& extensions,
+        const alexaext::ExtensionRegistrarPtr& registrar,
+        const AlexaExtExtensionExecutorPtr& executor) {
+    m_aplConnectionManager->addAlexaExtExtensions(extensions, registrar, executor);
 }
 
 void AplClientRenderer::onExtensionEvent(

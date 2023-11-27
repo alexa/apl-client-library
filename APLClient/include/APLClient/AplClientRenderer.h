@@ -21,14 +21,17 @@
 #include <memory>
 #include <string>
 #include <rapidjson/document.h>
+#include <alexaext/alexaext.h>
 
 #include "AplConfiguration.h"
 #include "AplCoreConnectionManager.h"
 #include "AplCoreGuiRenderer.h"
 #include "AplRenderingEventObserver.h"
 #include "AplRenderingEvent.h"
+#include "AplViewhostConfig.h"
 #include "Telemetry/AplMetricsRecorderInterface.h"
 #include "APLClient/Extensions/Backstack/AplBackstackExtension.h"
+#include "APLClient/Extensions/AplCoreExtensionExecutor.h"
 
 namespace APLClient {
 /**
@@ -77,6 +80,14 @@ public:
         const std::string& data,
         const std::string& viewports,
         const std::string& token);
+
+    /**
+     * Set a default viewhost config to use when initialzing the document. If not provided or it is different 
+     * from the one provided to the browser side, it will be replaced by the browser side one during inflation.
+     * This may cause unnecessary package reloading for conditional import enabled documents.
+     * @param viewhostConfig Default viewhost config 
+     */
+    void setViewhostConfig(const AplViewhostConfigPtr& viewhostConfig);
 
     /**
      * Clears the current APL document
@@ -129,6 +140,16 @@ public:
      * @param extensions Set of Shared Pointers to AplCoreExtensionInterfaces
      */
     void addExtensions(std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions);
+
+    /**
+     * Adds AlexaExt Extensions to the client
+     * @param extensions Set of Shared Pointers to AlexaExt::Extension
+     */
+    void addAlexaExtExtensions(
+        const std::unordered_set<alexaext::ExtensionPtr>& extensions,
+        const alexaext::ExtensionRegistrarPtr& registrar,
+        const AlexaExtExtensionExecutorPtr& executor
+    );
 
     /**
      * Extension Event Callback function

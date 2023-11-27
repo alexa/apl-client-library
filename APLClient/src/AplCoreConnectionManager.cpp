@@ -21,6 +21,7 @@
 #include "APLClient/AplCoreViewhostMessage.h"
 #include "APLClient/AplCoreAudioPlayerFactory.h"
 #include "APLClient/AplCoreMediaPlayerFactory.h"
+#include "APLClient/Extensions/AplCoreExtensionExecutor.h"
 
 #include <apl/datasource/dynamicindexlistdatasourceprovider.h>
 #include <apl/datasource/dynamictokenlistdatasourceprovider.h>
@@ -28,6 +29,12 @@
 #include <apl/component/videocomponent.h>
 
 namespace APLClient {
+
+/// CDN for alexa import packages (styles/resources/etc)
+/// (https://developer.amazon.com/en-US/docs/alexa/alexa-presentation-language/apl-document.html#import)
+static const char* ALEXA_IMPORT_PATH = "https://arl.assets.apl-alexa.com/packages/%s/%s/document.json";
+/// The number of bytes read from the attachment with each read in the read loop.
+static const size_t CHUNK_SIZE(1024);
 
 /// The keys used in ProvideState.
 static const char TOKEN_KEY[] = "token";
@@ -75,6 +82,10 @@ static const char ANIMATIONQUALITY_KEY[] = "animationQuality";
 static const char SUPPORTED_EXTENSIONS[] = "supportedExtensions";
 static const char EXTENSION_MESSAGE_KEY[] = "extension";
 static const char SCROLL_COMMAND_DURATION_KEY[] = "scrollCommandDuration";
+
+/// The keys used to provide SupportedExtensions from JS
+static const char URI_KEY[] = "uri";
+static const char FLAGS_KEY[] = "flags";
 
 /// The keys used in OS accessibility settings.
 static const char FONTSCALE_KEY[] = "fontScale";
@@ -125,6 +136,9 @@ static const char DOCUMENT_APL_VERSION_KEY[] = "documentAplVersion";
 static const char POINTEREVENTTYPE_KEY[] = "pointerEventType";
 static const char POINTERTYPE_KEY[] = "pointerType";
 static const char POINTERID_KEY[] = "pointerId";
+
+// Default font
+static const char DEFAULT_FONT[] = "amazon-ember-display";
 
 /// Data sources
 static const std::vector<std::string> KNOWN_DATA_SOURCES = {
@@ -216,6 +230,9 @@ void AplCoreConnectionManager::setSupportedViewports(const std::string& jsonPayl
         double maxHeight = getOptionalValue(spec, "maxHeight", INT_MAX);
         std::string mode = getOptionalValue(spec, "mode", "HUB");
         std::string shape = spec.FindMember("shape")->value.GetString();
+        // Ensure the viewport mode is uppercased
+        std::transform(mode.begin(), mode.end(), mode.begin(),
+            [](unsigned char c){ return std::toupper(c); });
 
         m_ViewportSizeSpecifications.emplace_back(
                 minWidth,
@@ -703,6 +720,101 @@ void AplCoreConnectionManager::interruptCommandSequence() {
     }
 }
 
+void AplCoreConnectionManager::updateViewhostConfig(const AplViewhostConfigPtr viewhostConfig) {
+    m_viewhostConfig = viewhostConfig;
+
+    m_RootConfig.set({
+                {apl::RootProperty::kAgentName, viewhostConfig->agentName()},
+                {apl::RootProperty::kAgentVersion, viewhostConfig->agentVersion()},
+                {apl::RootProperty::kAllowOpenUrl, viewhostConfig->allowOpenUrl()},
+                {apl::RootProperty::kDisallowVideo, viewhostConfig->disallowVideo()},
+                {apl::RootProperty::kScrollCommandDuration, viewhostConfig->scrollCommandDuration()},
+                {apl::RootProperty::kDisallowEditText, viewhostConfig->disallowEditText()},
+                {apl::RootProperty::kDisallowDialog, viewhostConfig->disallowDialog()},
+                {apl::RootProperty::kAnimationQuality, static_cast<apl::RootConfig::AnimationQuality>(viewhostConfig->animationQuality())}
+            });
+
+    m_Metrics.size(viewhostConfig->viewportWidth(), viewhostConfig->viewportHeight())
+            .dpi(viewhostConfig->viewportDpi())
+            .shape(viewhostConfig->viewportShape())
+            .mode(viewhostConfig->viewportMode());
+}
+
+bool
+AplCoreConnectionManager::loadPackage(const apl::ContentPtr& content) {
+    auto aplOptions = m_aplConfiguration->getAplOptions();
+    auto metricsRecorder = m_aplConfiguration->getMetricsRecorder();
+
+    auto cImports = metricsRecorder->createCounter(
+            Telemetry::AplMetricsRecorderInterface::LATEST_DOCUMENT,
+            "APL-Web.Content.imports");
+    auto cError = metricsRecorder->createCounter(
+            Telemetry::AplMetricsRecorderInterface::LATEST_DOCUMENT,
+            "APL-Web.Content.error");
+
+    std::unordered_map<uint32_t, std::future<std::string>> packageContentByRequestId;
+    std::unordered_map<uint32_t, apl::ImportRequest> packageRequestByRequestId;
+    while (content->isWaiting() && !content->isError()) {
+        auto packages = content->getRequestedPackages();
+        cImports->incrementBy(packages.size());
+        unsigned int count = 0;
+        for (auto& package : packages) {
+            auto name = package.reference().name();
+            auto version = package.reference().version();
+            auto source = package.source();
+
+            aplOptions->logMessage(
+                    LogLevel::DBG, "loadPackage", "Requesting package: " + name + " " + version);
+
+            if (source.empty()) {
+                char sourceBuffer[CHUNK_SIZE];
+                snprintf(sourceBuffer, CHUNK_SIZE, ALEXA_IMPORT_PATH, name.c_str(), version.c_str());
+                source = sourceBuffer;
+            }
+
+            auto packageContentFuture =
+                async(std::launch::async, &AplOptionsInterface::downloadResource, aplOptions, source);
+            packageContentByRequestId.insert(std::make_pair(package.getUniqueId(), std::move(packageContentFuture)));
+            packageRequestByRequestId.insert(std::make_pair(package.getUniqueId(), package));
+            count++;
+
+            // if we reach the maximum number of concurrent downloads or already go through all packages, wait for them
+            // to finish
+            if (count % aplOptions->getMaxNumberOfConcurrentDownloads() == 0 || packages.size() == count) {
+                for (auto& kvp : packageContentByRequestId) {
+                    auto packageContent = kvp.second.get();
+                    if (packageContent.empty()) {
+                        aplOptions->logMessage(
+                            LogLevel::ERROR, "renderByAplCoreFailed", "Could not be retrieve requested import");
+                        return false;
+                    }
+                    content->addPackage(packageRequestByRequestId.at(kvp.first), packageContent);
+                }
+                packageContentByRequestId.clear();
+                packageRequestByRequestId.clear();
+            }
+        }
+    }
+
+    return !content->isError();
+}
+
+bool AplCoreConnectionManager::registerRequestedExtensions() {
+    // Extensions requested by the content
+    auto requestedExtensions = m_Content->getExtensionRequests();
+
+    if (m_extensionManager->useAlexaExt()) {
+        if (!initAlexaExts(requestedExtensions)) {
+            // Required extensions have not loaded.
+            return false;
+        }
+    } else {
+        initLegacyExts(requestedExtensions);
+    }
+
+    return true;
+}
+
 void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
     auto aplOptions = m_aplConfiguration->getAplOptions();
 
@@ -714,17 +826,14 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
     /* APL Document Inflation started */
     aplOptions->onRenderingEvent(m_aplToken, AplRenderingEvent::INFLATE_BEGIN);
 
-
-    apl::RootConfig config;
-
     if (m_documentStateToRestore) {
         // Restore from document state
         m_aplToken = m_documentStateToRestore->token;
         m_Root = m_documentStateToRestore->rootContext;
         m_Content = m_Root->content();
-        config = m_documentStateToRestore->rootContext->getRootConfig();
-        m_Root->configurationChange(m_documentStateToRestore->configurationChange);
+        m_RootConfig = m_Root->getRootConfig();
         coreFrameUpdate();
+        m_Root->configurationChange(m_documentStateToRestore->configurationChange);
     }
 
     if (!m_Content) {
@@ -736,6 +845,14 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
 
     // Get APL Version for content
     std::string aplVersion = m_Content->getAPLVersion();
+
+    if (!m_audioPlayerFactory) {
+        m_audioPlayerFactory = AplCoreAudioPlayerFactory::create(shared_from_this(), m_aplConfiguration);
+    }
+
+    if (!m_mediaPlayerFactory) {
+        m_mediaPlayerFactory = AplCoreMediaPlayerFactory::create(shared_from_this(), m_aplConfiguration);
+    }
 
     // If we're not restoring a document state, create a new RootConfig.
     if (!m_documentStateToRestore) {
@@ -749,8 +866,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         int animationQuality =
             getOptionalInt(message, ANIMATIONQUALITY_KEY, apl::RootConfig::AnimationQuality::kAnimationQualityNormal);
 
-        config = apl::RootConfig()
-                     .set({
+        m_RootConfig = apl::RootConfig().set({
                          {apl::RootProperty::kAgentName, agentName},
                          {apl::RootProperty::kAgentVersion, agentVersion},
                          {apl::RootProperty::kAllowOpenUrl, allowOpenUrl},
@@ -761,43 +877,87 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
                          {apl::RootProperty::kAnimationQuality, static_cast<apl::RootConfig::AnimationQuality>(animationQuality)},
                          {apl::RootProperty::kUTCTime, getCurrentTime().count()},
                          {apl::RootProperty::kLocalTimeAdjustment, aplOptions->getTimezoneOffset().count()},
-                         {apl::RootProperty::kDefaultIdleTimeout, -1}
+                         {apl::RootProperty::kDefaultIdleTimeout, -1},
+                         {apl::RootProperty::kDefaultFontFamily, DEFAULT_FONT}
                       })
                      .measure(std::make_shared<AplCoreTextMeasurement>(shared_from_this(), m_aplConfiguration))
                      .localeMethods(std::make_shared<AplCoreLocaleMethods>(shared_from_this(), m_aplConfiguration))
                      .enforceAPLVersion(apl::APLVersion::kAPLVersionIgnore)
                      .enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureManageMediaRequests)
-                     .audioPlayerFactory(AplCoreAudioPlayerFactory::create(shared_from_this(), m_aplConfiguration))
-                     .mediaPlayerFactory(AplCoreMediaPlayerFactory::create(shared_from_this(), m_aplConfiguration));
+                     .audioPlayerFactory(m_audioPlayerFactory)
+                     .mediaPlayerFactory(m_mediaPlayerFactory);
 
         // Data Sources
-        config.dataSourceProvider(
+        m_RootConfig.dataSourceProvider(
             apl::DynamicIndexListConstants::DEFAULT_TYPE_NAME,
             std::make_shared<apl::DynamicIndexListDataSourceProvider>());
 
-        config.dataSourceProvider(
+        m_RootConfig.dataSourceProvider(
                 apl::DynamicTokenListConstants::DEFAULT_TYPE_NAME,
                 std::make_shared<apl::DynamicTokenListDataSourceProvider>());
+
+        // Handle metrics data
+        m_Metrics.size(message[WIDTH_KEY].GetInt(), message[HEIGHT_KEY].GetInt())
+            .dpi(message[DPI_KEY].GetInt())
+            .shape(AVS_VIEWPORT_SHAPE_MAP.at(message[SHAPE_KEY].GetString()))
+            .mode(AVS_VIEWPORT_MODE_MAP.at(message[MODE_KEY].GetString()));
+
+        m_Content->refresh(m_Metrics, m_RootConfig);
+        if(!loadPackage(m_Content)) {
+            aplOptions->logMessage(
+                    LogLevel::WARN, __func__, "Unable to refresh content");
+            sendError("Content failed to prepare");
+            inflationTimer->fail();
+            return;
+        }
     }
 
-    // Add Extensions which are supported, requested, and available to the config
+    // Extension initialisation
+    m_supportedExtensions.clear();
     if (message.HasMember(SUPPORTED_EXTENSIONS) && message[SUPPORTED_EXTENSIONS].IsArray()) {
         // Extensions supported by the client renderer instance
         auto supportedExtensions = message[SUPPORTED_EXTENSIONS].GetArray();
-        // Extensions requested by the content
-        auto requestedExtensions = m_Content->getExtensionRequests();
 
         for (auto& ext : supportedExtensions) {
-            auto uri = ext.GetString();
-            // If the supported extension is both requested and available, register it with the config
-            if (requestedExtensions.find(uri) != requestedExtensions.end()) {
-                if (auto extension = m_extensionManager->getExtension(uri)) {
-                    // Apply content defined settings to extension
-                    extension->applySettings(m_Content->getExtensionSettings(uri));
-                    m_extensionManager->registerRequestedExtension(extension->getUri(), config);
+            auto supportedExtension = std::make_shared<SupportedExtension>();
+            if (ext.IsString()) {
+                // No flags provided for extension initialisation
+                supportedExtension->uri = ext.GetString();
+            } else {
+                // Flags can be supplied via SUPPORTED_EXTENSIONS using SupportedExtension::APLWSRenderer.d.ts
+                // e.g. `supportedExtensions.push({uri: 'aplext:e2eencryption:10', flags: 'aFlag' })`
+                //
+                // Allowed formats:
+                // - an unkeyed container (array)
+                // - a key-value bag (keyed container)
+                // - a single non-null value
+                if (ext.IsObject() && ext.HasMember(URI_KEY) && ext[URI_KEY].IsString()) {
+                    supportedExtension->uri = ext[URI_KEY].GetString();
+
+                    // Have optional flags been provided?
+                    if (ext.HasMember(FLAGS_KEY)) {
+                        if (ext[FLAGS_KEY].IsArray() || ext[FLAGS_KEY].IsObject() || ext[FLAGS_KEY].IsString()) {
+                            supportedExtension->flags = ext[FLAGS_KEY];
+                        } else {
+                            aplOptions->logMessage(LogLevel::WARN, "handleBuildFailed", "SUPPORTED_EXTENSIONS flags entry not formatted correctly");
+                        }
+                    }
+                } else {
+                    aplOptions->logMessage(LogLevel::WARN, "handleBuildFailed", "SUPPORTED_EXTENSIONS entry not formatted correctly");
+                    continue;
                 }
             }
+            m_supportedExtensions.push_back(supportedExtension);
         }
+    }
+
+    if (!registerRequestedExtensions()) {
+        // If using AlexaExt: Required extensions have not loaded
+        aplOptions->logMessage(LogLevel::ERROR, "handleBuildFailed", "Required extensions have not loaded");
+        sendError("Required extensions have not loaded");
+
+        inflationTimer->stop();
+        return;
     }
 
     auto renderingOptionsMsg = AplCoreViewhostMessage(RENDERING_OPTIONS_KEY);
@@ -820,12 +980,6 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
 
     // If we're not restoring a document state, then create metrics and RootContext
     if (!m_documentStateToRestore) {
-        // Handle metrics data
-        m_Metrics.size(message[WIDTH_KEY].GetInt(), message[HEIGHT_KEY].GetInt())
-            .dpi(message[DPI_KEY].GetInt())
-            .shape(AVS_VIEWPORT_SHAPE_MAP.at(message[SHAPE_KEY].GetString()))
-            .mode(AVS_VIEWPORT_MODE_MAP.at(message[MODE_KEY].GetString()));
-
         do {
             apl::ScalingOptions scalingOptions = {
                 m_ViewportSizeSpecifications, SCALING_BIAS_CONSTANT, SCALING_SHAPE_OVERRIDES_COST};
@@ -838,7 +992,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
             sendViewhostScalingMessage();
 
             m_StartTime = getCurrentTime();
-            m_Root = apl::RootContext::create(m_AplCoreMetrics->getMetrics(), m_Content, config);
+            m_Root = apl::RootContext::create(m_AplCoreMetrics->getMetrics(), m_Content, m_RootConfig);
             if (m_Root) {
                 break;
             } else if (!m_ViewportSizeSpecifications.empty()) {
@@ -866,7 +1020,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
     }
 
     // Get background
-    apl::Object background = m_Content->getBackground(m_AplCoreMetrics->getMetrics(), config);
+    apl::Object background = m_Content->getBackground(m_AplCoreMetrics->getMetrics(), m_Root->getRootConfig());
 
     bool supportsResizing = false;
 
@@ -891,7 +1045,7 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         // and displaying Children
         sendHierarchy(HIERARCHY_KEY);
 
-        auto idleTimeout = std::chrono::milliseconds(m_Content->getDocumentSettings()->idleTimeout(config));
+        auto idleTimeout = std::chrono::milliseconds(m_Content->getDocumentSettings()->idleTimeout(m_Root->getRootConfig()));
         aplOptions->onSetDocumentIdleTimeout(m_aplToken, idleTimeout);
         aplOptions->onRenderDocumentComplete(m_aplToken, true, "");
     } else {
@@ -901,6 +1055,92 @@ void AplCoreConnectionManager::handleBuild(const rapidjson::Value& message) {
         aplOptions->onRenderDocumentComplete(m_aplToken, false, "Unable to inflate document");
         // Send DataSource errors if any
         checkAndSendDataSourceErrors();
+    }
+}
+
+bool AplCoreConnectionManager::initAlexaExts(const std::set<std::string>& requestedExtensions) {
+    auto extensionMediator = apl::ExtensionMediator::create(
+        m_extensionManager->getExtensionRegistrar(),
+        m_extensionManager->getExtensionExecutor()
+    );
+
+    m_RootConfig.enableExperimentalFeature(apl::RootConfig::ExperimentalFeature::kExperimentalFeatureExtensionProvider)
+        .extensionProvider(m_extensionManager->getExtensionRegistrar())
+        .extensionMediator(extensionMediator);
+
+    std::condition_variable notifyLoaded;
+    std::mutex extensionMutex;
+    const std::chrono::milliseconds maxWaitTime = std::chrono::milliseconds(5000);
+
+    // Extension Granting
+    std::set<std::string> grantedURIs;
+    apl::ObjectMap flagMap;
+
+    for (auto& ext : m_supportedExtensions) {
+        if (!ext->flags.empty()) {
+            flagMap[ext->uri] = ext->flags;
+        }
+        
+        if (requestedExtensions.find(ext->uri) != requestedExtensions.end()) {
+            if (auto extension = m_extensionManager->getAlexaExtExtension(ext->uri)) {
+                grantedURIs.emplace(ext->uri);
+            }
+        }
+    }
+
+    extensionMediator->initializeExtensions(
+        flagMap,
+        m_Content,
+        [grantedURIs](const std::string& uri,
+            apl::ExtensionMediator::ExtensionGrantResult grant,
+            apl::ExtensionMediator::ExtensionGrantResult deny) {
+                grantedURIs.count(uri) > 0 ? grant(uri) : deny (uri);
+            }
+    );
+
+    auto loadingFinished = false;
+    auto loadingFailed = false;
+    extensionMediator->loadExtensions(
+        flagMap,
+        m_Content,
+        [&](bool success){
+            // ExtensionLoadedCallback 
+            std::lock_guard<std::mutex> lock(extensionMutex);
+            loadingFinished = true;
+            loadingFailed = !success;
+            notifyLoaded.notify_all();
+        }
+    );
+
+    {
+        std::unique_lock<std::mutex> waitLock(extensionMutex);
+        auto res = notifyLoaded.wait_for(waitLock, maxWaitTime, [&]() {
+            return loadingFinished;
+        });
+
+        if (!res) {
+            m_aplConfiguration->getAplOptions()->logMessage(LogLevel::ERROR, "initAlexaExtsFailed", "Timed out waiting for extensions to load. Some extensions may not be loaded.");
+            sendError("Timed out waiting for extensions to load. Some extensions may not be loaded.");
+        }
+        if (loadingFailed) {
+            m_aplConfiguration->getAplOptions()->logMessage(LogLevel::ERROR, "initAlexaExtsFailed", "Required extension loading failed.");
+            sendError("Required extension loading failed.");
+        }
+    }
+    return !loadingFailed;
+}
+
+void AplCoreConnectionManager::initLegacyExts(const std::set<std::string>& requestedExtensions) {
+    for (auto& ext: m_supportedExtensions) {
+        // If the supported extension is both requested and available, register it with the config
+        if (requestedExtensions.find(ext->uri) != requestedExtensions.end()) {
+            if (auto extension = m_extensionManager->getExtension(ext->uri)) {
+                // Apply content defined settings to extension
+                auto extSettings = m_Content->getExtensionSettings(ext->uri);
+                extension->applySettings(extSettings);
+                m_extensionManager->registerRequestedExtension(extension->getUri(), m_RootConfig);
+            }
+        }
     }
 }
 
@@ -1475,36 +1715,43 @@ void AplCoreConnectionManager::processEvent(const apl::Event& event) {
         return;
     }
 
+    
     if (apl::EventType::kEventTypeExtension == event.getType()) {
-        /**
-         * Extension Events are received when registered ExtensionCommands are fired
-         * https://github.com/alexa/apl-core-library/blob/master/aplcore/include/apl/content/extensioncommanddefinition.h
-         */
-        rapidjson::Document extensionEventPayloadJson(rapidjson::kObjectType);
-        auto& allocator = extensionEventPayloadJson.GetAllocator();
+        if (m_extensionManager->useAlexaExt()) {
+            auto mediator = m_Root->rootConfig().getExtensionMediator();
+            mediator->invokeCommand(event);
+            return;
+        } else {
+            /**
+             * Extension Events are received when registered ExtensionCommands are fired
+             * https://github.com/alexa/apl-core-library/blob/master/aplcore/include/apl/content/extensioncommanddefinition.h
+             */
+            rapidjson::Document extensionEventPayloadJson(rapidjson::kObjectType);
+            auto& allocator = extensionEventPayloadJson.GetAllocator();
 
-        auto uri = event.getValue(apl::EventProperty::kEventPropertyExtensionURI);
-        auto name = event.getValue(apl::EventProperty::kEventPropertyName);
-        auto source = event.getValue(apl::EventProperty::kEventPropertySource);
-        auto params = event.getValue(apl::EventProperty::kEventPropertyExtension);
+            auto uri = event.getValue(apl::EventProperty::kEventPropertyExtensionURI);
+            auto name = event.getValue(apl::EventProperty::kEventPropertyName);
+            auto source = event.getValue(apl::EventProperty::kEventPropertySource);
+            auto params = event.getValue(apl::EventProperty::kEventPropertyExtension);
 
-        std::string sourceStr;
-        std::string paramsStr;
+            std::string sourceStr;
+            std::string paramsStr;
 
-        serializeJSONValueToString(source.serialize(allocator).Move(), &sourceStr);
-        serializeJSONValueToString(params.serialize(allocator).Move(), &paramsStr);
+            serializeJSONValueToString(source.serialize(allocator).Move(), &sourceStr);
+            serializeJSONValueToString(params.serialize(allocator).Move(), &paramsStr);
 
-        /**
-         * If the registered ExtensionCommand requires resolution, the resultCallback should be registered with the
-         * extension
-         * https://github.com/alexa/apl-core-library/blob/master/aplcore/include/apl/content/extensioncommanddefinition.h#L87
-         */
-        auto token = ++m_SequenceNumber;
-        auto resultCallback = addPendingEvent(token, event, false) ? shared_from_this() : nullptr;
-        aplOptions->onExtensionEvent(m_aplToken, uri.getString(), name.getString(), sourceStr, paramsStr, token, resultCallback);
-        return;
+            /**
+             * If the registered ExtensionCommand requires resolution, the resultCallback should be registered with the
+             * extension
+             * https://github.com/alexa/apl-core-library/blob/master/aplcore/include/apl/content/extensioncommanddefinition.h#L87
+             */
+            auto token = ++m_SequenceNumber;
+            auto resultCallback = addPendingEvent(token, event, false) ? shared_from_this() : nullptr;
+            aplOptions->onExtensionEvent(m_aplToken, uri.getString(), name.getString(), sourceStr, paramsStr, token, resultCallback);
+            return;
+        }
     }
-
+    
     auto msg = AplCoreViewhostMessage(EVENT_KEY);
     auto token = send(msg.setPayload(event.serialize(msg.alloc())));
     addPendingEvent(token, event);
@@ -1749,8 +1996,24 @@ void AplCoreConnectionManager::addExtensions(
     }
 }
 
+void AplCoreConnectionManager::addAlexaExtExtensions(
+        const std::unordered_set<alexaext::ExtensionPtr>& extensions,
+        const alexaext::ExtensionRegistrarPtr& registrar,
+        const AlexaExtExtensionExecutorPtr& executor
+    ) {
+    for (auto& extension : extensions) {
+        m_extensionManager->addAlexaExtExtension(extension);
+    }
+    m_extensionManager->setExtensionRegistrar(registrar);
+    m_extensionManager->setExtensionExecutor(executor);
+}
+
 std::shared_ptr<AplCoreExtensionInterface> AplCoreConnectionManager::getExtension(const std::string& uri) {
     return m_extensionManager->getExtension(uri);
+}
+
+alexaext::ExtensionPtr AplCoreConnectionManager::getAlexaExtExtension(const std::string& uri) {
+    return m_extensionManager->getAlexaExtExtension(uri);
 }
 
 void AplCoreConnectionManager::reset() {
@@ -1825,6 +2088,23 @@ void AplCoreConnectionManager::handleReInflate(const rapidjson::Value& payload) 
         aplOptions->logMessage(LogLevel::ERROR, "handleIsCharacterValidFailed", "Root context is null");
         return;
     }
+
+    if (m_Content->isWaiting()) {
+        if (!loadPackage(m_Content)) {
+            aplOptions->logMessage(
+                    LogLevel::WARN, __func__, "Unable to reload content.");
+            sendError("Content failed to reload");
+            return;
+        }
+    }
+
+    if (!registerRequestedExtensions()) {
+        // If using AlexaExt: Required extensions have not loaded
+        aplOptions->logMessage(LogLevel::ERROR, "handleReinflate", "Required extensions have not loaded");
+        sendError("Required extensions have not loaded");
+        return;
+    }
+
     m_Root->reinflate();
 
     // update component hierarchy

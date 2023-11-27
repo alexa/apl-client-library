@@ -23,6 +23,7 @@ namespace test {
         public:
             MockAplCoreConnectionManager() : AplCoreConnectionManager(nullptr) {}
             MOCK_METHOD0(getScaleToViewhost, float());
+            MOCK_METHOD1(loadPackage, bool(const apl::ContentPtr&));
             MOCK_METHOD0(aplCoreMetrics, std::shared_ptr<AplCoreMetrics>());
             MOCK_METHOD2(blockingSend, rapidjson::Document(AplCoreViewhostMessage& message,
                     const std::chrono::milliseconds& timeout));

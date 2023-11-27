@@ -21,6 +21,7 @@
 #include <thread>
 #include <APLClient/AplCoreTextMeasurement.h>
 #include <APLClient/Telemetry/NullAplMetricsRecorder.h>
+#include "APLClient/Extensions/Backstack/AplBackstackExtension.h"
 
 namespace APLClient {
 namespace test {
@@ -94,6 +95,91 @@ static const std::string DOCUMENT =
     "  \"type\": \"APL\","
     "  \"version\": \"1.5\","
     "  \"theme\": \"light\","
+    "  \"settings\": {"
+    "    \"supportsResizing\": true"
+    "   },"
+    "  \"description\": \"This is a sample APL document\","
+    "  \"import\": [],"
+    "  \"layouts\": {"
+    "    \"Box\": {"
+    "      \"item\": {"
+    "        \"type\": \"VectorGraphic\","
+    "        \"width\": \"50dp\","
+    "        \"height\": \"50dp\","
+    "        \"style\": \"focusStyle\","
+    "        \"source\": \"box\""
+    "      }"
+    "    }"
+    "  },"
+    "  \"mainTemplate\": {"
+    "    \"parameters\": ["
+    "      \"payload\""
+    "    ],"
+    "    \"item\": {"
+    "          \"type\": \"Container\","
+    "          \"items\": ["
+    "            {"
+    "              \"type\": \"Text\","
+    "              \"id\": \"COMP1\","
+    "              \"width\": \"100%\","
+    "              \"text\": \"Hello World\","
+    "              \"fontSize\": 50"
+    "            },"
+    "            {"
+    "              \"type\": \"Video\","
+    "              \"id\": \"video\","
+    "              \"height\": 300,"
+    "              \"width\": 716.8,"
+    "              \"top\": 10,"
+    "              \"left\": 100,"
+    "              \"autoplay\": true,"
+    "              \"audioTrack\": \"background\","
+    "              \"source\": ["
+    "                {"
+    "                  \"url\": \"URL\""
+    "                }"
+    "              ]"
+    "            },"
+    "            {"
+    "              \"id\": \"textBox\","
+    "              \"type\": \"Text\","
+    "              \"text\": \"Hello\","
+    "              \"fontSize\": 50"
+    "            },"
+    "            {"
+    "              \"id\" : \"GRAPHIC\","
+    "              \"type\": \"Box\","
+    "              \"position\": \"absolute\","
+    "              \"top\": 0,"
+    "              \"left\": 225"
+    "            }"
+    "            ]"
+    "      }"
+    "   },"
+    "   \"onConfigChange\": ["
+    "       {"
+    "           \"type\": \"Reinflate\""
+    "       }"
+    "   ],"
+    "   \"onDisplayStateChange\": ["
+    "       {"
+    "           \"type\": \"Reinflate\""
+    "       }"
+    "   ]"
+    "}";
+
+static const std::string DOCUMENT_WITH_REQUIRED_EXTENSIONS =
+    "{"
+    "  \"type\": \"APL\","
+    "  \"version\": \"1.5\","
+    "  \"theme\": \"light\","
+    "  \"extensions\": ["
+    "        {"
+    "            \"name\": \"attention\","
+    "            \"uri\": \"aplext:attentionsystem:10\","
+    "            \"required\": true"
+    "        }"
+    "    ],"
     "  \"settings\": {"
     "    \"supportsResizing\": true"
     "   },"
@@ -252,6 +338,69 @@ static const std::string BUILD_PAYLOAD =
     "  }"
     "}";
 
+static const std::string BUILD_PAYLOAD_WITH_SUPPORTED_EXTENSIONS =
+    "{"
+    "  \"type\":\"build\","
+    "  \"payload\":"
+    "  {"
+    "    \"agentName\":\"APLClient\","
+    "    \"agentVersion\":\"1.0\","
+    "    \"allowOpenUrl\":false,"
+    "    \"disallowVideo\":false,"
+    "    \"animationQuality\":\"normal\","
+    "    \"width\":1920,\"height\":1080,"
+    "    \"shape\":\"RECTANGLE\","
+    "    \"dpi\":160,"
+    "    \"mode\":\"TV\","
+    "    \"supportedExtensions\": ["
+    "      \"aplext:backstack:10\","
+    "      \"aplext:e2eencryption:10\""
+    "    ]"
+    "  }"
+    "}";
+
+static const std::string BUILD_PAYLOAD_WITH_SUPPORTED_EXTENSIONS_AND_FLAGS =
+    "{"
+    "  \"type\":\"build\","
+    "  \"payload\":"
+    "  {"
+    "    \"agentName\":\"APLClient\","
+    "    \"agentVersion\":\"1.0\","
+    "    \"allowOpenUrl\":false,"
+    "    \"disallowVideo\":false,"
+    "    \"animationQuality\":\"normal\","
+    "    \"width\":1920,\"height\":1080,"
+    "    \"shape\":\"RECTANGLE\","
+    "    \"dpi\":160,"
+    "    \"mode\":\"TV\","
+    "    \"supportedExtensions\": ["
+    "      {"
+    "        \"uri\": \"aplext::backstack:10\","
+    "        \"flags\": \"aFlag\"" // valid
+    "      },"
+    "      {"
+    "        \"uri\": \"aplext::e2eencryption:10\","
+    "        \"flags\": [\"aFlag\"]" // valid
+    "      },"
+    "      {"
+    "        \"uri\": \"aplext::attentionsystem:10\","
+    "        \"flags\": {"
+    "            \"aKey\": \"aValue\"" // valid
+    "        }"
+    "      },"
+    "      {"
+    "        \"uri\": \"aplext::attentionsystem:10\","
+    "        \"no\": {" // invalid
+    "            \"aKey\": \"aValue\"" 
+    "        }"
+    "      },"
+    "      ["
+    "        \"aplext::attentionsystem:10\", \"aflag\"" // invalid
+    "      ]"
+    "    ]"
+    "  }"
+    "}";
+
 static const std::string EVENT_PAYLOAD =
     "{"
     "  \"type\": \"APL\","
@@ -353,7 +502,9 @@ static const std::string APL_COMMAND_EXECUTION{"APLCommandExecution"};
 static const std::string SEQNO_KEY = "seqno";
 
 /// Test harness for @c AplCoreConnectionManagerTest class.
-class AplCoreConnectionManagerTest : public ::testing::Test {
+class AplCoreConnectionManagerTest : 
+    public ::testing::Test,
+    public std::enable_shared_from_this<AplCoreConnectionManagerTest> {
 public:
     /// Set up the test harness for running a test.
     void SetUp() override;
@@ -362,7 +513,7 @@ public:
     void TearDown() override;
 
     /// Setting up m_Root
-    void BuildDocument(const std::string, const std::string, const std::string);
+    void BuildDocument(const std::string, const std::string, const std::string, const std::string);
 
     void SetupMocksForDocumentRender();
 
@@ -400,13 +551,14 @@ void AplCoreConnectionManagerTest::TearDown() {
 void AplCoreConnectionManagerTest::BuildDocument(
     const std::string document,
     const std::string data,
-    const std::string viewport) {
+    const std::string viewport,
+    const std::string buildPayload = BUILD_PAYLOAD) {
     auto content = apl::Content::create(document);
     m_aplCoreConnectionManager->setSupportedViewports(viewport);
     m_aplCoreConnectionManager->setContent(content, "");
     // this is required in order to set content state to ready
     content->addData(DEFAULT_PARAM_BINDING, data);
-    m_aplCoreConnectionManager->handleMessage(BUILD_PAYLOAD);
+    m_aplCoreConnectionManager->handleMessage(buildPayload);
 }
 
 // Matcher for message been send out. Test Match against messaage type and expected payload.
@@ -900,6 +1052,113 @@ TEST_F(AplCoreConnectionManagerTest, ProvideStateSuccess) {
     BuildDocument(DOCUMENT, DATA, VIEWPORT);
     EXPECT_CALL(*m_mockAplOptions, onVisualContextAvailable(_, _, _)).Times(1);
     m_aplCoreConnectionManager->provideState(1);
+}
+
+static const std::string DOCUMENT_APL_WITH_PACKAGE = "{"
+                         "  \"type\": \"APL\","
+                         "  \"version\": \"1.0\","
+                         "  \"theme\": \"light\","
+                         "  \"description\": \"This is a sample APL document\","
+                         "  \"import\": ["
+                         "       {"
+                         "          \"name\":\"alexa-viewport-profiles\","
+                         "          \"version\":\"1.0.0\""
+                         "       }"
+                         " ],"
+                         "   \"mainTemplate\": {"
+                         "     \"parameters\": ["
+                         "       \"payload\""
+                         "     ],"
+                         "     \"item\": {"
+                         "           \"type\": \"Container\","
+                         "           \"items\": ["
+                         "             {"
+                         "               \"type\": \"Text\","
+                         "               \"width\": \"100%\","
+                         "               \"text\": \"Hello World\","
+                         "               \"fontSize\": 50"
+                         "             }"
+                         "           ]"
+                         "     }"
+                         "   }"
+                         "}";
+
+const std::string SOURCE =
+            "https://arl.assets.apl-alexa.com/packages/alexa-viewport-profiles/1.0.0/document.json";
+
+TEST_F(AplCoreConnectionManagerTest, LoadPackage) {
+    const std::string packageContent = "{"
+                         " \"type\": \"APL\",   "
+                         "      \"version\": \"1.0.0\","
+                         "       \"resources\": ["
+                         "          {"
+                         "            \"description\": \"Definition of density types\","
+                         "            \"numbers\":"
+                         "             {   "
+                         "              \"viewportDensityXLow\": 0,"
+                         "              \"viewportDensityLow\": 1,"
+                         "              \"viewportDensityNormal\": 2,"
+                         "              \"viewportDensityHigh\": 3,"
+                         "              \"viewportDensityXHigh\": 4,"
+                         "              \"viewportDensityXXHigh\": 5 "
+                         "              }"
+                         "            }"
+                         "       ]"
+                         " }";
+
+
+    EXPECT_CALL(*m_mockAplOptions, downloadResource(SOURCE)).Times(1).WillOnce(Return(packageContent));
+    EXPECT_CALL(*m_mockAplOptions, onRenderDocumentComplete(_, _, _)).Times(0);
+    EXPECT_CALL(*m_mockAplOptions, getMaxNumberOfConcurrentDownloads()).Times(1).WillOnce(Return(5));
+
+    auto content = apl::Content::create(DOCUMENT_APL_WITH_PACKAGE);
+
+    m_aplCoreConnectionManager->loadPackage(content);
+}
+
+// 
+// Extensions
+// 
+
+const static std::string TEST_EXTENSION_URI = "aplext:attentionsystem:10";
+
+void registerAnAlexaExt(std::shared_ptr<AplCoreConnectionManager> connectionManager) {
+    auto extensionRegistrar = std::make_shared<alexaext::ExtensionRegistrar>();
+    auto extensionExecutor = std::make_shared<AlexaExtExtensionExecutor>();
+    auto attentionSystem = std::make_shared<alexaext::attention::AplAttentionSystemExtension>(extensionExecutor);
+
+    extensionRegistrar->registerExtension(std::make_shared<alexaext::LocalExtensionProxy>(attentionSystem));
+    connectionManager->addAlexaExtExtensions({ attentionSystem }, extensionRegistrar, extensionExecutor);
+}
+
+TEST_F(AplCoreConnectionManagerTest, initAlexaExtsWithRequiredExtension) {
+    // Arrange
+    registerAnAlexaExt(m_aplCoreConnectionManager);
+
+    // Act
+    BuildDocument(DOCUMENT_WITH_REQUIRED_EXTENSIONS, DATA, VIEWPORT, BUILD_PAYLOAD_WITH_SUPPORTED_EXTENSIONS);
+
+    // Assert
+    ASSERT_EQ(TEST_EXTENSION_URI, *(m_aplCoreConnectionManager->getAlexaExtExtension(TEST_EXTENSION_URI)->getURIs().begin()));
+}
+
+TEST_F(AplCoreConnectionManagerTest, initAlexaExtsWithoutRequiredExtension) {
+    // Act
+    BuildDocument(DOCUMENT_WITH_REQUIRED_EXTENSIONS, DATA, VIEWPORT, BUILD_PAYLOAD_WITH_SUPPORTED_EXTENSIONS);
+
+    // Assert
+    ASSERT_EQ(nullptr, m_aplCoreConnectionManager->getAlexaExtExtension(TEST_EXTENSION_URI));
+}
+
+TEST_F(AplCoreConnectionManagerTest, alexaExtFlags) {
+    // Arrange
+    registerAnAlexaExt(m_aplCoreConnectionManager);
+
+    // Act
+    BuildDocument(DOCUMENT_WITH_REQUIRED_EXTENSIONS, DATA, VIEWPORT, BUILD_PAYLOAD_WITH_SUPPORTED_EXTENSIONS_AND_FLAGS);
+
+    // This test is to ensure the SUPPORTED_EXTENSIONS parsing is robust, and doesn't crash ACL
+    // If we reach here without crashing, the test is successful
 }
 
 }  // namespace test

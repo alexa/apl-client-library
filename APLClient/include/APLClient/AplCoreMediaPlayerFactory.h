@@ -44,6 +44,7 @@ namespace APLClient {
 class AplCoreMediaPlayerFactory : public apl::MediaPlayerFactory {
 public:
     AplCoreMediaPlayerFactory(AplCoreConnectionManagerWPtr aplCoreConnectionManager, AplConfigurationPtr config);
+    ~AplCoreMediaPlayerFactory() override;
 
     static std::shared_ptr<AplCoreMediaPlayerFactory> create(AplCoreConnectionManagerWPtr aplCoreConnectionManager, AplConfigurationPtr config);
 

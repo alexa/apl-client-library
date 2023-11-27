@@ -17,6 +17,7 @@ export declare class APLMediaPlayerFactory implements APL.MediaPlayerFactory {
     createPlayer(id: string): APLMediaPlayer;
     getMediaPlayer(playerId: string): APLMediaPlayer;
     deleteMediaPlayer(playerId: string): void;
+    destroy(): void;
     delete(): void;
 }
 export declare type MediaPlayerFactoryFunc = (aplMediaPlayer: APL.MediaPlayer) => IMediaPlayerHandle;

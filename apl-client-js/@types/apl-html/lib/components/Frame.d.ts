@@ -9,10 +9,10 @@ import { Component, FactoryFunction, IComponentProperties } from './Component';
  * @ignore
  */
 export interface IFrameProperties extends IComponentProperties {
-    [PropertyKey.kPropertyBackgroundColor]: number;
+    [PropertyKey.kPropertyBackground]: any;
     [PropertyKey.kPropertyBorderRadii]: APL.Radii;
     [PropertyKey.kPropertyBorderColor]: number;
-    [PropertyKey.kPropertyBorderWidth]: number;
+    [PropertyKey.kPropertyDrawnBorderWidth]: number;
 }
 /**
  * @ignore
@@ -20,7 +20,7 @@ export interface IFrameProperties extends IComponentProperties {
 export declare class Frame extends Component<IFrameProperties> {
     constructor(renderer: APLRenderer, component: APL.Component, factory: FactoryFunction, parent?: Component);
     protected isLayout(): boolean;
-    private setBackgroundColor;
+    private setBackground;
     private setBorderRadii;
     private setBorderColor;
     private setBorderWidth;

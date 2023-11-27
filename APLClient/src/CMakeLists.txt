@@ -12,6 +12,7 @@ Extensions/AttentionSystem/AplAttentionSystemExtension.cpp
 Extensions/AudioPlayer/AplAudioPlayerExtension.cpp
 Extensions/AudioPlayer/AplAudioPlayerAlarmsExtension.cpp
 Extensions/Backstack/AplBackstackExtension.cpp
+Extensions/AplCoreExtensionExecutor.cpp
 Telemetry/AplMetricsRecorder.cpp
 Telemetry/AplMetricsRecorderInterface.cpp
 Telemetry/DownloadMetricsEmitter.cpp
@@ -22,7 +23,8 @@ AplCoreGuiRenderer.cpp
 AplCoreMetrics.cpp
 AplCoreTextMeasurement.cpp
 AplCoreLocaleMethods.cpp
-AplClientRenderer.cpp)
+AplClientRenderer.cpp
+AplViewhostConfig.cpp)
 
 target_include_directories(APLClient PUBLIC "${APLClient_SOURCE_DIR}/include")
 

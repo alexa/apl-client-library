@@ -23,6 +23,7 @@ namespace Backstack {
 /// String to identify log entries originating from this file.
 static const std::string TAG("AplBackstackExtension");
 
+static const std::string ENV_VERSION = "Backstack-1.0";
 static const std::string ENVIRONMENT_RESPONSIBLE_FOR_BACK_BUTTON = "responsibleForBackButton";
 static const std::string ENVIRONMENT_BACKSTACK = "backstack";
 static const std::string SETTING_PROPERTY_BACKSTACK_ID = "backstackId";
@@ -32,9 +33,12 @@ static const std::string COMMAND_CLEAR_NAME = "Clear";
 static const std::string PROPERTY_BACK_TYPE = "backType";
 static const std::string PROPERTY_BACK_VALUE = "backValue";
 static const std::string PROPERTY_BACK_TYPE_COUNT = "count";
+static const std::string DATA_TYPE_GO_BACK_COMMAND = "GoBackCommandType";
+static const std::string DATA_TYPE_ID = "BackstackId";
 
 AplBackstackExtension::AplBackstackExtension(std::shared_ptr<AplBackstackExtensionObserverInterface> observer) :
-        m_observer{observer} {
+        alexaext::ExtensionBase(URI),
+        m_observer{observer}  {
     m_backstackArrayName = "";
     m_responsibleForBackButton = false;
 }
@@ -110,10 +114,10 @@ void AplBackstackExtension::applySettings(const apl::Object& settings) {
     logMessage(LOGLEVEL_DEBUG, TAG, "backstack_settings", settings.toDebugString());
     /// Apply @c apl::Content defined settings
     if (settings.isMap()) {
-        if (settings.has(SETTING_PROPERTY_BACKSTACK_ID)) {
+        if (settings.has(SETTING_PROPERTY_BACKSTACK_ID) && settings.get(SETTING_PROPERTY_BACKSTACK_ID).isString()) {
             m_activeDocumentId = settings.get(SETTING_PROPERTY_BACKSTACK_ID).getString();
         }
-        if (settings.has(SETTING_PROPERTY_BACKSTACK_ARRAY_NAME)) {
+        if (settings.has(SETTING_PROPERTY_BACKSTACK_ARRAY_NAME) && settings.get(SETTING_PROPERTY_BACKSTACK_ARRAY_NAME).isString()) {
             m_backstackArrayName = settings.get(SETTING_PROPERTY_BACKSTACK_ARRAY_NAME).getString();
         }
     }
@@ -192,6 +196,169 @@ void AplBackstackExtension::onExtensionEvent(
         resultCallback->onExtensionEventResult(event, succeeded);
     }
 }
+
+/// <alexaext>
+
+rapidjson::Document
+AplBackstackExtension::createRegistration(const alexaext::ActivityDescriptor &activity, const rapidjson::Value &registrationRequest) {
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__,  "Received registration: " + alexaext::AsPrettyString(registrationRequest));
+
+    const auto &supportedURIs = getURIs();
+    const auto& uri = activity.getURI();
+    if (supportedURIs.find(uri) == supportedURIs.end()) {
+        return alexaext::RegistrationFailure::forUnknownURI(uri);
+    }
+
+    applySettings(alexaext::RegistrationRequest::SETTINGS().Get(registrationRequest));
+
+    rapidjson::Document response = alexaext::RegistrationSuccess(alexaext::DEFAULT_SCHEMA_VERSION)
+            .environment([&](alexaext::Environment &env) {
+                env.version(ENV_VERSION)
+                   .property(ENVIRONMENT_RESPONSIBLE_FOR_BACK_BUTTON, m_responsibleForBackButton)
+                   .property(ENVIRONMENT_BACKSTACK, m_backstack.getBackstackIdsArrayJson());
+            })
+            .uri(URI)
+            .token("<AUTO_TOKEN>")
+            .schema(alexaext::DEFAULT_SCHEMA_VERSION, [&](alexaext::ExtensionSchema &schema) {
+                schema.uri(URI);
+
+                schema.dataType(DATA_TYPE_GO_BACK_COMMAND, [](alexaext::TypeSchema &dataType) {
+                    dataType.property(PROPERTY_BACK_TYPE, [](alexaext::TypePropertySchema &property) {
+                        property
+                                .type("string")
+                                .required(false)
+                                .defaultValue("count");
+                    });
+                    dataType.property(PROPERTY_BACK_VALUE, [](alexaext::TypePropertySchema &property) {
+                        property
+                                .type("object") // string or integer, so use object
+                                .required(false)
+                                .defaultValue(1);
+                    });
+                });
+
+                schema.dataType(DATA_TYPE_ID);
+
+                schema.command(COMMAND_CLEAR_NAME, [](alexaext::CommandSchema &command) {
+                    command.allowFastMode(true);
+                });
+
+                schema.command(COMMAND_GO_BACK_NAME, [](alexaext::CommandSchema &command) {
+                    command.allowFastMode(true)
+                           .dataType(DATA_TYPE_GO_BACK_COMMAND);
+                });
+
+                if (!m_backstackArrayName.empty()) {
+                    schema.liveDataArray(m_backstackArrayName, [](alexaext::LiveDataSchema &liveData) {
+                        liveData.dataType(DATA_TYPE_ID);
+                    });
+                }
+            });
+
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Sending registration response: " + alexaext::AsPrettyString(response));
+
+    return response;
+}
+
+void AplBackstackExtension::onSessionStarted(const alexaext::SessionDescriptor& session) {
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Session Started");
+}
+
+void AplBackstackExtension::onSessionEnded(const alexaext::SessionDescriptor& session) {
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Session Ended");
+    reset();
+}
+
+void AplBackstackExtension::onActivityRegistered(const alexaext::ActivityDescriptor &activity) {
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Activity registered: " + activity.getId());
+    updateLiveData(activity);
+}
+
+void AplBackstackExtension::onActivityUnregistered(const alexaext::ActivityDescriptor& activity) {
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Activity unregistered: " + activity.getId());
+}
+
+bool AplBackstackExtension::invokeCommand(const alexaext::ActivityDescriptor &activity, const rapidjson::Value &command) {
+    logMessage(apl::LogLevel::kInfo, TAG, __func__, "Command invoked: " + alexaext::AsPrettyString(command));
+
+    const std::string &name = alexaext::GetWithDefault(alexaext::Command::NAME(), command, "");
+
+    if (m_observer) {
+        if (COMMAND_GO_BACK_NAME == name) {
+            const rapidjson::Value* params = alexaext::Command::PAYLOAD().Get(command);
+            if (!params || !params->HasMember(PROPERTY_BACK_TYPE) || !params->HasMember(PROPERTY_BACK_VALUE))
+                return false;
+
+            auto backType = backTypeFromString(alexaext::GetWithDefault(PROPERTY_BACK_TYPE, params, ""));
+            switch (backType) {
+                case AplBackType::COUNT: {
+                    auto backValue = alexaext::GetWithDefault<unsigned int>(PROPERTY_BACK_VALUE, params, 1);
+                    return goBackCount(backValue);
+                }
+                case AplBackType::INDEX: {
+                    auto backValue = alexaext::GetWithDefault<unsigned int>(PROPERTY_BACK_VALUE, params, 1);
+                    return goBackIndex(backValue);
+                }
+                case AplBackType::ID: {
+                    auto backValue = alexaext::GetWithDefault(PROPERTY_BACK_VALUE, params, "");
+                    return goBackId(backValue);
+                }
+            }
+        } else if (COMMAND_CLEAR_NAME == name) {
+            m_backstack.clear();
+            return true;
+        } else {
+            logMessage(apl::LogLevel::kError, TAG, __func__, "Invalid Command: ");
+            return false;
+        }
+    } else {
+        logMessage(apl::LogLevel::kError, TAG, __func__, "No Event Observer: ");
+        return false;
+    }
+
+    return true;
+}
+
+void AplBackstackExtension::applySettings(const rapidjson::Value *settings) {
+    m_backstackArrayName = alexaext::GetWithDefault(SETTING_PROPERTY_BACKSTACK_ARRAY_NAME, settings, "");
+    m_activeDocumentId = alexaext::GetWithDefault(SETTING_PROPERTY_BACKSTACK_ID, settings, "");    
+}
+
+void AplBackstackExtension::updateLiveData(const alexaext::ActivityDescriptor &activity) {
+    if (m_backstackArrayName.empty()) {
+        return;
+    }
+
+    rapidjson::Document update = alexaext::LiveDataUpdate(alexaext::DEFAULT_SCHEMA_VERSION)
+        .objectName(m_backstackArrayName)
+        .uri(getUri())
+        .liveDataArrayUpdate([&](alexaext::LiveDataArrayOperation& op) {
+            op.type("Clear");
+        });
+
+    logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Publishing 'Clear' update: " + alexaext::AsPrettyString(update));
+
+    invokeLiveDataUpdate(activity, update);
+
+    int index = 0;
+    for (auto id : m_backstack.getBackstackIdsArray()) {
+        rapidjson::Document update = alexaext::LiveDataUpdate(alexaext::DEFAULT_SCHEMA_VERSION)
+            .objectName(m_backstackArrayName)
+            .uri(getUri())
+            .liveDataArrayUpdate([&](alexaext::LiveDataArrayOperation& op) {
+                op.type("Insert")
+                    .index(index)
+                    .item(id.asString());
+            });
+
+        logMessage(LOGLEVEL_DEBUG, TAG, __func__, "Publishing 'insert' update: " + alexaext::AsPrettyString(update));
+        invokeLiveDataUpdate(activity, update);
+
+        index++;
+    }
+}
+
+/// </alexaext>
 
 }  // namespace Backstack
 }  // namespace Extensions

@@ -39,6 +39,7 @@ export declare class EditText extends ActionableComponent<IEditTextProperties> {
     formElement: HTMLFormElement;
     inputElement: HTMLInputElement;
     private localFocused;
+    private lastFilteredValue;
     private enterPressedDown;
     private isEdge;
     constructor(renderer: APLRenderer, component: APL.Component, factory: FactoryFunction, parent?: Component);

@@ -30,7 +30,13 @@
 #pragma pop_macro("TRUE")
 #pragma pop_macro("FALSE")
 #pragma GCC diagnostic pop
+
 #include "AplCoreExtensionInterface.h"
+
+#include <alexaext/alexaext.h>
+#include <memory>
+
+#include "APLClient/Extensions/AplCoreExtensionExecutor.h"
 
 namespace APLClient {
 namespace Extensions {
@@ -80,9 +86,51 @@ public:
         std::shared_ptr<AplCoreExtensionEventCallbackResultInterface> resultCallback = nullptr) override;
     /// @}
 
+
+    //
+    // AlexaExt
+    // 
+
+    /**
+     * Adds an AlexaExt Extension to the manager
+     * @param extension Shared Pointer to @c alexaext::Extension
+     */
+    void addAlexaExtExtension(const alexaext::ExtensionPtr& extension);
+
+    // Returns the type of extensions registered (as we can only register AlexaExt OR legacy extensions)
+    bool useAlexaExt();
+
+    /**
+     * Gets an AlexaExt Extension by its uri
+     * @param uri Extension Uri
+     * @return Shared Pointer to @c alexaext::Extension
+     */
+    alexaext::ExtensionPtr getAlexaExtExtension(const std::string& uri);
+
+    void setExtensionRegistrar(const alexaext::ExtensionRegistrarPtr& registrar);
+
+    alexaext::ExtensionRegistrarPtr getExtensionRegistrar();
+
+    void setExtensionExecutor(const AlexaExtExtensionExecutorPtr& executor);
+
+    AlexaExtExtensionExecutorPtr getExtensionExecutor();
+
 private:
     /// Map of @c AplCoreExtensionInterfaces by uri
     std::unordered_map<std::string, std::shared_ptr<AplCoreExtensionInterface>> m_Extensions;
+
+    /// Map of @c alexaext::Extension by uri
+    std::unordered_map<std::string, alexaext::ExtensionPtr> m_AlexaExtExtensions;
+
+    // Pointer to the ExtensionRegistrar
+    alexaext::ExtensionRegistrarPtr m_extensionRegistrar;
+
+    // Pointer to the AlexaExtExtensionExecutor 
+    AlexaExtExtensionExecutorPtr m_extensionExecutor;
+
+    // Flags for preventing registration of both extension types
+    bool m_UseAlexaExt = false;
+    bool m_ExtensionsHaveBeenAdded = false;
 };
 
 using AplCoreExtensionManagerPtr = std::shared_ptr<AplCoreExtensionManager>;

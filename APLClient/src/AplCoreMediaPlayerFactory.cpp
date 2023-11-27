@@ -36,6 +36,13 @@ namespace APLClient {
 AplCoreMediaPlayerFactory::AplCoreMediaPlayerFactory(AplCoreConnectionManagerWPtr aplCoreConnectionManager, AplConfigurationPtr config)
     : m_aplCoreConnectionManager(aplCoreConnectionManager), m_aplConfiguration(config) {}
 
+AplCoreMediaPlayerFactory::~AplCoreMediaPlayerFactory()
+{
+    for (auto it = m_activePlayers.begin(); it != m_activePlayers.end(); ++it) {
+        sendMediaPlayerDelete(it->first);
+    }
+}
+
 std::shared_ptr<AplCoreMediaPlayerFactory>
 AplCoreMediaPlayerFactory::create(AplCoreConnectionManagerWPtr aplCoreConnectionManager, AplConfigurationPtr config)
 {
@@ -78,10 +85,10 @@ AplCoreMediaPlayerFactory::cleanup()
     for (auto it = m_activePlayers.begin(); it != m_activePlayers.end(); ) {
         if (!it->second.lock()) {
             // weak pointer is no longer valid, prune it from the array
-            it = m_activePlayers.erase(it);
             sendMediaPlayerDelete(it->first);
+            it = m_activePlayers.erase(it);
         } else {
-            it++;
+            ++it;
         }
     }
 }

@@ -29,5 +29,6 @@ export declare enum CommandType {
     kCommandTypeReinflate = 22,
     kCommandTypeCustomEvent = 23,
     kCommandTypeInsertItem = 24,
-    kCommandTypeRemoveItem = 25
+    kCommandTypeRemoveItem = 25,
+    kCommandTypeLog = 26
 }

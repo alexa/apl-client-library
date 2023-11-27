@@ -41,6 +41,7 @@ namespace Extensions {
 
 /// Static cast of apl::LogLevel::DEBUG
 static apl::LogLevel LOGLEVEL_DEBUG = static_cast<apl::LogLevel>(1);
+static apl::LogLevel LOGLEVEL_ERROR = static_cast<apl::LogLevel>(5);
 
 /**
  * Log message through APL Core Logger

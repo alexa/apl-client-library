@@ -8,6 +8,7 @@ export declare class APLMediaPlayer implements APL.MediaPlayer {
     private client;
     private playerId;
     private mediaPlayerHandle;
+    private released;
     constructor(client: APLClient, playerId: string, playerFactory: any);
     delete(): void;
     updateMediaState(mediaState: any): void;

@@ -6,6 +6,7 @@
 import { Component } from './components/Component';
 import { MeasureMode } from './components/text/MeasureMode';
 import { IVideoFactory } from './components/video/IVideoFactory';
+import { Content } from './Content';
 import { AnimationQuality } from './enums/AnimationQuality';
 import { DisplayState } from './enums/DisplayState';
 import { IExtensionManager } from './extensions/IExtensionManager';
@@ -37,6 +38,15 @@ export interface IViewportCharacteristics {
     shape?: ViewportShape;
     /** Dots per inch */
     dpi: number;
+    /** Providing the min & max will turn on auto-sizing feature */
+    /** The minimum width of the viewport, in pixels */
+    minWidth?: number;
+    /** The maximum width of the viewport, in pixels */
+    maxWidth?: number;
+    /** The minimum height of the viewport, in pixels */
+    minHeight?: number;
+    /** The maximum height of the viewport, in pixels */
+    maxHeight?: number;
 }
 export interface IEnvironmentBase {
     /** Indicates if video is allowed.  */
@@ -73,8 +83,20 @@ export interface IConfigurationChangeOptions extends IEnvironmentBase {
     width?: number;
     /** Viewport Height in pixels */
     height?: number;
+    /** Providing the min & max will turn on auto-sizing feature. Must provide all of the 6 values:
+     *  minWidth, maxWidth, minHeight, maxHeight, width, height
+     */
+    /** The minimum width of the viewport, in pixels */
+    minWidth?: number;
+    /** The maximum width of the viewport, in pixels */
+    maxWidth?: number;
+    /** The minimum height of the viewport, in pixels */
+    minHeight?: number;
+    /** The maximum height of the viewport, in pixels */
+    maxHeight?: number;
     /** APL theme. Usually 'light' or 'dark' */
     docTheme?: string;
+    theme?: string;
     /** Device mode. If no provided "HUB" is used. */
     mode?: DeviceMode;
     /** Relative size of fonts to display as specified by the OS accessibility settings */
@@ -190,6 +212,11 @@ export interface IAPLOptions {
      */
     onOpenUrl?: (source: string) => Promise<boolean>;
     /**
+     * Callback for view size update during auto-resizing. width and height in pixels
+     * Runtime should return quickly as this method blocks the rendering path
+     */
+    onViewportSizeUpdate?: (pixelWidth: number, pixelHeight: number) => void;
+    /**
      * Contains developer tool options
      */
     developerToolOptions?: IDeveloperToolOptions;
@@ -209,6 +236,7 @@ export default abstract class APLRenderer<Options = any> {
     protected logger: ILogger;
     componentByMappingKey: Map<string, Component>;
     private viewEventListeners;
+    content: Content;
     /** A reference to the APL root context */
     context: APL.Context;
     /** Root renderer component */
@@ -230,6 +258,7 @@ export default abstract class APLRenderer<Options = any> {
      */
     protected constructor(mOptions: IAPLOptions);
     init(metricRecorder?: (m: APL.DisplayMetric) => void): void;
+    loadPackages(): Promise<boolean>;
     /**
      * Sets the renderer view size in pixels
      * @param width width in pixels
@@ -259,6 +288,7 @@ export default abstract class APLRenderer<Options = any> {
     getDeveloperToolOptions(): IDeveloperToolOptions | undefined;
     onRunTimeError(pendingErrors: object[]): void;
     onResizingIgnored(ignoredWidth: number, ignoredHeight: number): void;
+    onViewportSizeUpdate(width: number, height: number): void;
     /**
      * Called by core when a text measure is required
      * @param component The component to measure

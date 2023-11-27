@@ -1,5 +1,19 @@
 # Changelog for apl-client-library
 
+## [2023.3]
+This release adds support for version 2023.3 of the APL specification. Please also see APL Core Library for changes: [apl-core-library CHANGELOG](https://github.com/alexa/apl-core-library/blob/master/CHANGELOG.md)
+
+### Added
+- Support Alexaext extensions
+- Support gradient as Frame background
+- Support conditional imports
+- Exported caption control class cueControl for APL videos
+
+### Changed
+
+- Changed default font to sans-serif to meet the APL Spec
+- Bug fixes
+
 ## [2023.2]
 This release adds support for version 2023.2 of the APL specification. Please also see APL Core Library for changes: [apl-core-library CHANGELOG](https://github.com/alexa/apl-core-library/blob/master/CHANGELOG.md)
 

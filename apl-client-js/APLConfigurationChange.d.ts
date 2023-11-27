@@ -11,6 +11,7 @@ export declare class APLConfigurationChange implements APL.ConfigurationChange {
     constructor(payload?: IConfigurationChangeOptions);
     static create(options: IConfigurationChangeOptions): APLConfigurationChange;
     size(width: number, height: number): this;
+    sizeRange(width: number, minWidth: number, maxWidth: number, height: number, minHeight: number, maxHeight: number): this;
     width(width: number): this;
     height(height: number): this;
     theme(theme: string): this;

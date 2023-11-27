@@ -20,11 +20,6 @@
 
 namespace APLClient {
 
-/// CDN for alexa import packages (styles/resources/etc)
-/// (https://developer.amazon.com/en-US/docs/alexa/alexa-presentation-language/apl-document.html#import)
-static const char* ALEXA_IMPORT_PATH = "https://arl.assets.apl-alexa.com/packages/%s/%s/document.json";
-/// The number of bytes read from the attachment with each read in the read loop.
-static const size_t CHUNK_SIZE(1024);
 /// Name of the mainTemplate parameter to which avs datasources binds to.
 static const std::string DEFAULT_PARAM_BINDING = "payload";
 /// Default string to attach to mainTemplate parameters.
@@ -52,6 +47,10 @@ void AplCoreGuiRenderer::interruptCommandSequence() {
     m_aplCoreConnectionManager->interruptCommandSequence();
 }
 
+void AplCoreGuiRenderer::setViewhostConfig(const AplViewhostConfigPtr& config) {
+    m_aplCoreConnectionManager->updateViewhostConfig(config);
+}
+
 void AplCoreGuiRenderer::renderDocument(
     const std::string& document,
     const std::string& data,
@@ -71,7 +70,10 @@ void AplCoreGuiRenderer::renderDocument(
             Telemetry::AplMetricsRecorderInterface::LATEST_DOCUMENT,
             "APL-Web.Content.error");
     tContentCreate->start();
-    auto content = apl::Content::create(std::move(document));
+
+    auto content = apl::Content::create(std::move(document), apl::makeDefaultSession(),
+                                        m_aplCoreConnectionManager->getMetrics(), m_aplCoreConnectionManager->getRootConfig());
+
     if (!content) {
         aplOptions->logMessage(LogLevel::ERROR, "renderByAplCoreFailed", "Unable to create content");
 
@@ -99,52 +101,11 @@ void AplCoreGuiRenderer::renderDocument(
         }
     }
 
-    std::unordered_map<uint32_t, std::future<std::string>> packageContentByRequestId;
-    std::unordered_map<uint32_t, apl::ImportRequest> packageRequestByRequestId;
-    while (content->isWaiting() && !content->isError()) {
-        auto packages = content->getRequestedPackages();
-        cImports->incrementBy(packages.size());
-        unsigned int count = 0;
-        for (auto& package : packages) {
-            auto name = package.reference().name();
-            auto version = package.reference().version();
-            auto source = package.source();
-
-            if (source.empty()) {
-                char sourceBuffer[CHUNK_SIZE];
-                snprintf(sourceBuffer, CHUNK_SIZE, ALEXA_IMPORT_PATH, name.c_str(), version.c_str());
-                source = sourceBuffer;
-            }
-
-            auto packageContentPromise =
-                async(std::launch::async, &AplOptionsInterface::downloadResource, aplOptions, source);
-            packageContentByRequestId.insert(std::make_pair(package.getUniqueId(), std::move(packageContentPromise)));
-            packageRequestByRequestId.insert(std::make_pair(package.getUniqueId(), package));
-            count++;
-
-            // if we reach the maximum number of concurrent downloads or already go through all packages, wait for them
-            // to finish
-            if (count % aplOptions->getMaxNumberOfConcurrentDownloads() == 0 || packages.size() == count) {
-                for (auto& kvp : packageContentByRequestId) {
-                    auto packageContent = kvp.second.get();
-                    if (packageContent.empty()) {
-                        aplOptions->logMessage(
-                            LogLevel::ERROR, "renderByAplCoreFailed", "Could not be retrieve requested import");
-
-                        aplOptions->onRenderDocumentComplete(token, false, "Unresolved import");
-                        tContentCreate->fail();
-                        return;
-                    }
-                    content->addPackage(packageRequestByRequestId.at(kvp.first), packageContent);
-                }
-                packageContentByRequestId.clear();
-                packageRequestByRequestId.clear();
-            }
-        }
-    }
-
-    if (content->isError()) {
+    if (!m_aplCoreConnectionManager->loadPackage(content)) {
+        aplOptions->onRenderDocumentComplete(token, false, "Unresolved import");
+        tContentCreate->fail();
         cError->increment();
+        return;
     }
 
     if (!content->isReady()) {

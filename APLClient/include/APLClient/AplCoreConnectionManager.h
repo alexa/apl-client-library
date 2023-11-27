@@ -33,19 +33,27 @@
 #pragma pop_macro("FALSE")
 #pragma GCC diagnostic pop
 
+#include <alexaext/alexaext.h>
+
 #include "AplConfiguration.h"
 #include "AplCoreViewhostMessage.h"
 #include "AplCoreMetrics.h"
+#include "AplViewhostConfig.h"
 #include "Extensions/AplCoreExtensionEventCallbackResultInterface.h"
 #include "Extensions/AplCoreExtensionEventHandlerInterface.h"
 #include "Extensions/AplCoreExtensionInterface.h"
 #include "Extensions/AplCoreExtensionManager.h"
 #include "Extensions/AplDocumentState.h"
+#include "Extensions/AplCoreExtensionSupportedExtension.h"
 #include "Telemetry/AplMetricsRecorderInterface.h"
+#include "APLClient/Extensions/AplCoreExtensionExecutor.h"
 
 namespace APLClient {
 
 using namespace APLClient::Extensions;
+
+class AplCoreAudioPlayerFactory;
+class AplCoreMediaPlayerFactory;
 
 /**
  * Interacts with the APL Core Engine handling the event loop, updates etc. and passes messages between the core
@@ -174,11 +182,28 @@ public:
     void addExtensions(std::unordered_set<std::shared_ptr<AplCoreExtensionInterface>> extensions);
 
     /**
+     * Adds Extensions to the client
+     * @param extensions Set of Shared Pointers to alexaext::Extension
+     */
+    void addAlexaExtExtensions(
+        const std::unordered_set<alexaext::ExtensionPtr>& extensions,
+        const alexaext::ExtensionRegistrarPtr& registrar,
+        const AlexaExtExtensionExecutorPtr& executor
+    );
+
+    /**
      * Gets the requested extension from the client
      * @param uri Extension Uri
      * @return Shared pointer to @c AplCoreExtensionInterface
      */
     std::shared_ptr<AplCoreExtensionInterface> getExtension(const std::string& uri);
+
+    /**
+     * Gets the requested Alexaext extension from the client
+     * @param uri Extension Uri
+     * @return Shared pointer to @c alexaext::Extension 
+     */
+    alexaext::ExtensionPtr getAlexaExtExtension(const std::string& uri);
 
     /**
      * Extension Event Callback function to invoke an extension event registered with @c AplCoreExtensionManager
@@ -209,6 +234,12 @@ public:
      */
     void restoreDocumentState(AplDocumentStatePtr documentState);
 
+    // Initialise Extensions provided via the AlexaExt flow (alexaext::Extension)
+    bool initAlexaExts(const std::set<std::string>& requestedExtensions);
+
+    // Initialise Extensions provided via the Legacy flow (APLCoreExtensionInterface)
+    void initLegacyExts(const std::set<std::string>& requestedExtensions);
+
     /**
      * Called when a document has finished rendering.
      *
@@ -224,6 +255,27 @@ public:
     std::chrono::milliseconds getCurrentTime() const {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch());
+    }
+
+    /**
+     * @brief Load the package required by the content
+     * virtual for testing
+     */
+    virtual bool loadPackage(const apl::ContentPtr& content);
+
+    /**
+     * @brief Updates the cached viewhost config, will also update the default root config
+     * 
+     * @param viewhostConfig 
+     */
+    void updateViewhostConfig(const AplViewhostConfigPtr viewhostConfig);
+
+    const apl::RootConfig& getRootConfig() const {
+        return m_RootConfig;
+    }
+
+    const apl::Metrics& getMetrics() const {
+        return m_Metrics;
     }
 
 private:
@@ -535,7 +587,11 @@ private:
 
     void getDataSourceContext(const rapidjson::Value& payload);
 
+    bool registerRequestedExtensions();
+
     AplConfigurationPtr m_aplConfiguration;
+
+    AplViewhostConfigPtr m_viewhostConfig;
 
     /// View host message type to handler map
     std::map<std::string, std::function<void(const rapidjson::Value&)>> m_messageHandlers;
@@ -545,6 +601,9 @@ private:
 
     /// The APL presentation token for the currently rendered document
     std::string m_aplToken;
+
+    /// The APL RootConfig object - received from the view host and used for generating the apl root context
+    apl::RootConfig m_RootConfig;
 
     /// The APL Metrics object - received from the view host and used for generating the apl root context
     apl::Metrics m_Metrics;
@@ -596,7 +655,15 @@ private:
     /// Pointer to the active @c AplDocumentState to restore.
     AplDocumentStatePtr m_documentStateToRestore;
 
-    std::chrono::steady_clock::time_point m_renderingStart;    
+    alexaext::ExtensionProviderPtr m_extensionRegistrar;
+
+    std::chrono::steady_clock::time_point m_renderingStart;
+
+    std::list<std::shared_ptr<SupportedExtension>> m_supportedExtensions;
+
+    std::shared_ptr<AplCoreAudioPlayerFactory> m_audioPlayerFactory;
+
+    std::shared_ptr<AplCoreMediaPlayerFactory> m_mediaPlayerFactory;
 };
 
 using AplCoreConnectionManagerPtr = std::shared_ptr<AplCoreConnectionManager>;

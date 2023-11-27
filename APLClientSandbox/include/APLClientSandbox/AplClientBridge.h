@@ -16,6 +16,10 @@
 #ifndef APLCLIENTSANDBOX_INCLUDE_APLCLIENTBINDING_H_
 #define APLCLIENTSANDBOX_INCLUDE_APLCLIENTBINDING_H_
 
+#include <mutex>
+#include <string>
+#include <alexaext/alexaext.h>
+
 #include "APLClient/AplClientBinding.h"
 #include "APLClient/Extensions/AplCoreExtensionInterface.h"
 #include "APLClient/Extensions/AudioPlayer/AplAudioPlayerExtension.h"
@@ -23,10 +27,9 @@
 #include "APLClient/Extensions/Backstack/AplBackstackExtension.h"
 #include "APLClient/Extensions/AttentionSystem/AplAttentionSystemExtension.h"
 #include "APLClient/AplOptionsInterface.h"
-#include <mutex>
-#include <string>
 #include "APLClientSandbox/Executor.h"
 #include "GUIManager.h"
+#include "APLClient/Extensions/AplCoreExtensionExecutor.h"
 
 class GUIManager;
 
@@ -34,7 +37,9 @@ class AplClientBridge
         : public APLClient::AplOptionsInterface
         , public APLClient::Extensions::Backstack::AplBackstackExtensionObserverInterface
         , public APLClient::Extensions::AudioPlayer::AplAudioPlayerExtensionObserverInterface
+        , public alexaext::audioplayer::AplAudioPlayerExtensionObserverInterface
         , public APLClient::Extensions::AudioPlayer::AplAudioPlayerAlarmsExtensionObserverInterface
+        , public alexaext::musicalarm::AplMusicAlarmExtensionObserverInterface
         , public std::enable_shared_from_this<AplClientBridge> {
 public:
     static std::shared_ptr<AplClientBridge> create();
@@ -102,6 +107,12 @@ public:
     void onAudioPlayerAlarmSnooze() override;
     /// @}
 
+    ///@name AplMusicAlarmExtensionObserverInterface Functions
+    /// @{
+    void dismissAlarm() override;
+    void snoozeAlarm() override;
+    /// @}
+
     /**
      * Passes the Attention State message onto the @c AplAttentionSystemExtension
      */
@@ -128,6 +139,16 @@ public:
      */
     void addExtensions(
         std::unordered_set<std::shared_ptr<APLClient::Extensions::AplCoreExtensionInterface>> extensions);
+
+    /**
+     *  Adds @c AlexaExt::Extension extensions to be registered with the @c AplClient
+     * @param extensions Set of pointers to @c alexaext extensions.
+     */
+    void addAlexaExtExtensions(
+        std::unordered_set<alexaext::ExtensionPtr> extensions,
+        alexaext::ExtensionRegistrarPtr registrar,
+        APLClient::AlexaExtExtensionExecutorPtr executor
+    );
 
     /**
      * Sets the GUI Manager
@@ -212,6 +233,7 @@ private:
     Executor m_executor;
 
     /// Pointer to the @c AplBackstackExtension
+    /// This is a extension works on both the legacy and new alexaext manager
     std::shared_ptr<APLClient::Extensions::Backstack::AplBackstackExtension> m_backstackExtension;
 
     /// Pointer to the @c AplAudioPlayerExtension
@@ -220,8 +242,19 @@ private:
     /// Pointer to the @c AplAudioPlayerAlarmsExtension
     std::shared_ptr<APLClient::Extensions::AudioPlayer::AplAudioPlayerAlarmsExtension> m_audioPlayerAlarmsExtension;
 
-    /// Pointer to the @c AplAttentionSystemExtension
+    /// Pointer to the @c AplAttentionSystemExtension for legacy extension manager
     std::shared_ptr<APLClient::Extensions::AttentionSystem::AplAttentionSystemExtension> m_attentionSystemExtension;
+
+    /// Pointer to the @c AplAttentionSystemExtension in alexaext, works with the new alexaext manager
+    std::shared_ptr<alexaext::attention::AplAttentionSystemExtension> m_attentionSystemExtensionV2;
+
+    /// Pointer to the @c AplAudioPlayerExtension in alexaext, works with the new alexaext manager
+    std::shared_ptr<alexaext::audioplayer::AplAudioPlayerExtension> m_audioPlayerExtensionV2;
+
+    /// Pointer to the @c AplMusicAlarmExtension in alexaext, works with the new alexaext manager
+    std::shared_ptr<alexaext::musicalarm::AplMusicAlarmExtension> m_musicAlarmExtension;
+
+    std::string m_currentAttentionState = "IDLE";
 
     /// audioPlayer offset at current session
     int audioPlayerOffset;

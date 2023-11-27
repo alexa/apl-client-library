@@ -9,6 +9,7 @@ import { GraphicPatternData } from './avg/APLGraphicPattern';
 export declare function toRect(context: APLContext, value: [number, number, number, number]): APL.Rect | undefined;
 export declare function toTransform(context: APLContext, value: [number, number, number, number, number, number]): string;
 export declare function toColor(context: APLContext, value: any): number;
+export declare function toBackground(context: APLContext, value: any): any;
 export declare function toStyledText(context: APLContext, value: {
     text: string;
     spans: Array<[number, number, number, APL.SpanAttribute[]]>;

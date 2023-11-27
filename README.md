@@ -1,10 +1,10 @@
 # Alexa Presentation Language (APL) Client Library
 
 <p>
- <a href="https://github.com/alexa/apl-client-library/tree/v2023.2.0" alt="version">
- <img src="https://img.shields.io/badge/stable%20version-2023.2.0-brightgreen" /></a>
- <a href="https://github.com/alexa/apl-core-library/tree/v2023.2.0" alt="APLCore">
- <img src="https://img.shields.io/badge/apl%20core%20library-2023.2.0-navy" /></a>
+ <a href="https://github.com/alexa/apl-client-library/tree/v2023.3.0" alt="version">
+ <img src="https://img.shields.io/badge/stable%20version-2023.3.0-brightgreen" /></a>
+ <a href="https://github.com/alexa/apl-core-library/tree/v2023.3.0" alt="APLCore">
+ <img src="https://img.shields.io/badge/apl%20core%20library-2023.3.0-navy" /></a>
 </p>
  
 ## Introduction
@@ -50,7 +50,7 @@ The APL Client Library depends on the following additional GitHub repos:
     source ./apl-dev-env.sh
     mkdir build
     cd build
-    cmake -DBUILD_TESTS=OFF -DCOVERAGE=OFF -DENABLE_PIC=ON -DCMAKE_INSTALL_PREFIX=${APL_EXPORTS_PATH} ..
+    cmake -DBUILD_TESTS=OFF -DCOVERAGE=OFF -DENABLE_PIC=ON -DBUILD_ALEXAEXTENSIONS=ON -DCMAKE_INSTALL_PREFIX=${APL_EXPORTS_PATH} ..
     make -j8
     make install
     ```

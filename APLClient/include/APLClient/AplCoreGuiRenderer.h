@@ -30,8 +30,11 @@
 #pragma pop_macro("FALSE")
 #pragma GCC diagnostic pop
 
+#include <string>
+
 #include "AplConfiguration.h"
 #include "AplCoreConnectionManager.h"
+#include "AplViewhostConfig.h"
 
 namespace APLClient {
 
@@ -42,6 +45,8 @@ namespace APLClient {
 class AplCoreGuiRenderer {
 public:
     AplCoreGuiRenderer(AplConfigurationPtr config, AplCoreConnectionManagerPtr aplCoreConnectionManager);
+
+    void setViewhostConfig(const AplViewhostConfigPtr& viewhostConfig);
 
     /**
      * Renders the given template document and data payload through Apl Core
