@@ -278,6 +278,10 @@ public:
         return m_Metrics;
     }
 
+    const AplViewhostConfigPtr getViewhostConfig() const {
+        return m_viewhostConfig;
+    }
+
 private:
     /**
      * Sends viewport scaling information to the client

@@ -24,7 +24,8 @@ AplCoreMetrics.cpp
 AplCoreTextMeasurement.cpp
 AplCoreLocaleMethods.cpp
 AplClientRenderer.cpp
-AplViewhostConfig.cpp)
+AplViewhostConfig.cpp
+AplSession.cpp)
 
 target_include_directories(APLClient PUBLIC "${APLClient_SOURCE_DIR}/include")
 

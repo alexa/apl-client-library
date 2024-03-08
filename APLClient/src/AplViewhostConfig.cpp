@@ -101,6 +101,12 @@ AplViewhostConfig::animationQuality(const AnimationQuality& quality) {
     return *this;
 }
 
+AplViewhostConfig&
+AplViewhostConfig::isLogCommandEnabled(bool isLogCommandEnabled) {
+    m_isLogCommandEnabled = isLogCommandEnabled;
+    return *this;
+}
+
 unsigned int
 AplViewhostConfig::viewportWidth() const {
     return m_viewportWidth;
@@ -169,6 +175,11 @@ AplViewhostConfig::scrollCommandDuration() const {
 AnimationQuality
 AplViewhostConfig::animationQuality() const {
     return m_animationQuality;
+}
+
+bool
+AplViewhostConfig::isLogCommandEnabled() const {
+    return m_isLogCommandEnabled;
 }
 
 } // namespace APLClient

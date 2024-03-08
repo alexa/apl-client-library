@@ -17,6 +17,7 @@
 #include <rapidjson/document.h>
 
 #include "APLClient/AplCoreGuiRenderer.h"
+#include "APLClient/AplSession.h"
 
 namespace APLClient {
 
@@ -71,7 +72,9 @@ void AplCoreGuiRenderer::renderDocument(
             "APL-Web.Content.error");
     tContentCreate->start();
 
-    auto content = apl::Content::create(std::move(document), apl::makeDefaultSession(),
+    const auto aplViewhostConfig = m_aplCoreConnectionManager->getViewhostConfig();
+    const bool isLogCommandEnabled = aplViewhostConfig ? aplViewhostConfig->isLogCommandEnabled() : false;
+    auto content = apl::Content::create(std::move(document), std::make_shared<AplSession>(isLogCommandEnabled),
                                         m_aplCoreConnectionManager->getMetrics(), m_aplCoreConnectionManager->getRootConfig());
 
     if (!content) {

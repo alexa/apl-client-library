@@ -1,5 +1,15 @@
 # Changelog for apl-client-library
 
+## [2024.1]
+This release adds support for version 2024.1 of the APL specification. Please also see APL Core Library for changes: [apl-core-library CHANGELOG](https://github.com/alexa/apl-core-library/blob/master/CHANGELOG.md)
+
+### Added
+- Add Log Command
+
+### Changed
+
+- Bug fixes
+
 ## [2023.3]
 This release adds support for version 2023.3 of the APL specification. Please also see APL Core Library for changes: [apl-core-library CHANGELOG](https://github.com/alexa/apl-core-library/blob/master/CHANGELOG.md)
 

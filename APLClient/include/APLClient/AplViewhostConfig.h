@@ -52,6 +52,7 @@ public:
     AplViewhostConfig& disallowDialog(bool disallow);
     AplViewhostConfig& scrollCommandDuration(unsigned int milliseconds);
     AplViewhostConfig& animationQuality(const AnimationQuality& quality);
+    AplViewhostConfig& isLogCommandEnabled(bool isLogCommandEnabled);
 
     unsigned int viewportWidth() const;
     unsigned int viewportHeight() const;
@@ -68,6 +69,7 @@ public:
     bool disallowDialog() const;
     unsigned int scrollCommandDuration() const;
     AnimationQuality animationQuality() const;
+    bool isLogCommandEnabled() const;
 
 private:
     unsigned int m_viewportWidth = 0;
@@ -85,6 +87,7 @@ private:
     bool m_disallowDialog = false;
     unsigned int m_scrollCommandDuration = 1000;
     AnimationQuality m_animationQuality = AnimationQuality::NORMAL;
+    bool m_isLogCommandEnabled = false;
 };
 
 using AplViewhostConfigPtr = std::shared_ptr<AplViewhostConfig>;

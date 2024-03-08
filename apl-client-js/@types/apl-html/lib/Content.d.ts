@@ -6,13 +6,24 @@
  * Holds all of the documents and data necessary to inflate an APL component hierarchy.
  */
 export declare class Content {
+    private doc;
     private data;
     /**
      * Creates an instance of a Content object. a single Content instance
      * can be used with multiple [[APLRenderer]]s.
      * @param doc The main APL document
+     * @param data The data used for the main document
+     * @param logCommandCallback The callback to send back the log info
      */
-    static create(doc: string, data?: string): Content;
+    static create(doc: string, data?: string, logCommandCallback?: APL.LogCommandCallback): Content;
+    /**
+     * Creates an instance of a Content object. a single Content instance
+     * can be used with multiple [[APLRenderer]]s.
+     * @param doc The main APL document
+     * @param data The data used for the main document
+     * @param logCommandCallback The callback to send back the log info
+     */
+    static recreate(other: Content, logCommandCallback?: APL.LogCommandCallback): Content;
     /**
      * APL doc settings.
      * @private

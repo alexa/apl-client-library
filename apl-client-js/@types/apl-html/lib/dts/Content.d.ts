@@ -12,8 +12,12 @@ declare namespace APL {
         public reference(): ImportRef;
         public source(): string;
     }
+    export type LogCommandCallback = (level: number, message: string, args: object) => void;
+    export class Session {
+        public static create(logCommandCallback?: LogCommandCallback): Session;
+    }
     export class Content extends Deletable {
-        public static create(document: string): Content;
+        public static create(document: string, session: Session): Content;
         public refresh(metrics: Metrics, config: RootConfig): void;
         public getRequestedPackages(): Set<ImportRequest>;
         public addPackage(request: ImportRequest, data: string): void;

@@ -250,7 +250,7 @@ double AplCoreConnectionManager::getOptionalValue(
         double defaultValue) {
     double value = defaultValue;
     const auto& valueIt = jsonNode.FindMember(key);
-    if (valueIt != jsonNode.MemberEnd()) {
+    if (valueIt != jsonNode.MemberEnd() && valueIt->value.IsNumber()) {
         value = valueIt->value.GetDouble();
     }
 
@@ -263,7 +263,7 @@ std::string AplCoreConnectionManager::getOptionalValue(
         const std::string& defaultValue) {
     std::string value = defaultValue;
     const auto& valueIt = jsonNode.FindMember(key);
-    if (valueIt != jsonNode.MemberEnd()) {
+    if (valueIt != jsonNode.MemberEnd() && valueIt->value.IsString()) {
         value = valueIt->value.GetString();
     }
 
